@@ -66,12 +66,13 @@ interface DailyChallenge {
 
 // --- Firebase Configuration ---
 const firebaseConfig: { [key: string]: string } = {
-    apiKey: "AIzaSyAcfkDIVV21EomfdNY2AQ-EZNKt8dgVZEM", // FIX: Replaced with provided valid API key
-    authDomain: "lumendose.firebaseapp.com",
-    projectId: "lumendose",
-    storageBucket: "lumendose.firebasestorage.com",
-    messagingSenderId: "493600405201",
-    appId: "1:493600405201:web:20c4bacbc98e77906e37f0"
+    apiKey: "AIzaSyAJp_KxTH-ICD8CKIUIzMjeN4sumj62Pbk", // FIX: Replaced with provided valid API key
+    authDomain: "thyraqfuel.firebaseapp.com",
+    projectId: "thyraqfuel",
+    storageBucket: "thyraqfuel.firebasestorage.app",
+    messagingSenderId: "828610666370",
+    appId: "1:828610666370:web:66bd9755838a9aeedc399b"
+     measurementId: "G-WP5VTSH45G" // Updated with user's provided measurementId
 };
 
 const appId = 'lumenfuel-app-standalone'; // Kept user's provided appId for this app
