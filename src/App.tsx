@@ -4,10 +4,6 @@ import { getAuth, signInAnonymously, onAuthStateChanged, Auth, signInWithCustomT
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, Firestore, getDocs, setDoc, getDoc } from 'firebase/firestore';
 // Ensured all necessary icons are imported here, and unused ones are removed.
 import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, History, BellRing } from 'lucide-react';
-
-// FIX: Add type declaration for canvas-confetti to resolve TypeScript error.
-declare module 'canvas-confetti';
-import confetti from 'canvas-confetti'; // For confetti celebration
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // --- Type Definitions for TypeScript ---
@@ -1606,11 +1602,13 @@ function AppContent() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('success') === 'true') { // Changed from payment_success to success
             setIsPremium(true);
-            confetti({
-                particleCount: 150,
-                spread: 180,
-                origin: { y: 0.6 }
-            });
+            if (typeof (window as any).confetti === 'function') {
+                (window as any).confetti({
+                    particleCount: 150,
+                    spread: 180,
+                    origin: { y: 0.6 }
+                });
+            }
             // Clean up the URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -1748,11 +1746,13 @@ function AppContent() {
                 await addDoc(collection(db, `artifacts/${finalAppId}/users/${userId}/achievements`), {
                     id, nameKey, descriptionKey, earnedDate: new Date().toISOString(),
                 });
-                confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 }
-                });
+                if (typeof (window as any).confetti === 'function') {
+                    (window as any).confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
             }
         };
 
@@ -1831,11 +1831,13 @@ function AppContent() {
         if (challengeCompleted) {
             await setDoc(challengeDocRef, { ...dailyChallenge, completed: true }, { merge: true });
             setDailyChallenge(prev => prev ? { ...prev, completed: true } : null);
-            confetti({
-                particleCount: 150,
-                spread: 90,
-                origin: { y: 0.8 }
-            });
+            if (typeof (window as any).confetti === 'function') {
+                (window as any).confetti({
+                    particleCount: 150,
+                    spread: 90,
+                    origin: { y: 0.8 }
+                });
+            }
         }
     }, [db, userId, dailyChallenge, drinks, dailySugarGoal, totalSugarToday, customQuickAdds, finalAppId]);
 
@@ -2242,6 +2244,26 @@ function AppContent() {
 }
 
 export default function App() {
+    useEffect(() => {
+        const scriptId = 'canvas-confetti-script';
+        // Check if the script already exists
+        if (document.getElementById(scriptId)) {
+            return;
+        }
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js";
+        script.async = true;
+        document.head.appendChild(script);
+
+        return () => {
+            const existingScript = document.getElementById(scriptId);
+            if (existingScript) {
+                document.head.removeChild(existingScript);
+            }
+        };
+    }, []);
+
     return (
         <LanguageProvider>
             <AppContent />
