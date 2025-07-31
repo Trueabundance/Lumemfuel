@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, FC, ReactNode } from 'react';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, Auth } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, Auth, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, Firestore, getDocs, setDoc, getDoc } from 'firebase/firestore';
-// Ensured all necessary icons are imported here
-import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, CheckCircle, XCircle, History, Calendar } from 'lucide-react';
+// Ensured all necessary icons are imported here, and unused ones are removed.
+import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, History, BellRing } from 'lucide-react';
+
+// FIX: Add type declaration for canvas-confetti to resolve TypeScript error.
+declare module 'canvas-confetti';
 import confetti from 'canvas-confetti'; // For confetti celebration
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -115,6 +118,8 @@ const translations: Translations = {
         log_empty: "No drinks logged yet.",
         section_title_premium: "Premium Features",
         modal_title: "Log a Sugary Drink",
+        modal_drink_type: "Drink Type",
+        modal_volume: "Volume (ml)",
         modal_sugar: "Sugar (g / 100ml)",
         modal_add_button: "Add to Log",
         drink_soda: "Soda",
@@ -215,7 +220,12 @@ const translations: Translations = {
         daily_challenge_stay_below_goal: "Stay below {value}g sugar today.",
         daily_challenge_use_custom_quick_add: "Use a custom quick add button.",
         daily_challenge_no_challenge: "No challenge for today. Enjoy your tracking!",
-        log_late_drink: "Log Late Drink", // New translation key for late add
+        log_late_drink: "Log Late Drink",
+        // FIX: Add missing reminder translations
+        reminder_title: "Gentle Reminder",
+        reminder_text: "It's been a while. Would you like to log any recent drinks?",
+        reminder_log_button: "Log Drink",
+        reminder_dismiss_button: "Dismiss",
     },
     de: { // German translations
         app_title: "LumenKraftstoff",
@@ -494,14 +504,14 @@ const translations: Translations = {
         app_title: "루멘퓨얼",
         header_premium_button: "프리미엄으로 전환",
         section_title_impact: "실시간 신체 영향",
-        section_subtitle_impact: "설탕의 단기적 영향에 대한 교육 모델입니다.",
+        section_subtitle_impact: "설탕의 단기적 영향에 대한 교육 모델입니다。",
         label_total_sugar: "총 설탕",
         section_title_control: "연료 섭취",
         button_log_drink: "음료 기록",
         disclaimer_title: "면책 조항",
-        disclaimer_text: "루멘퓨얼은 교육 도구이며 의학적 조언이 아닙니다. 건강 관련 조언은 전문가와 상담하십시오.",
+        disclaimer_text: "루멘퓨얼은 교육 도구이며 의학적 조언이 아닙니다. 건강 관련 조언은 전문가와 상담하십시오。",
         section_title_log: "현재 음료 기록",
-        log_empty: "아직 기록된 음료가 없습니다.",
+        log_empty: "아직 기록된 음료가 없습니다。",
         section_title_premium: "프리미엄 기능",
         modal_title: "설탕 음료 기록",
         modal_drink_type: "음료 종류",
@@ -516,18 +526,18 @@ const translations: Translations = {
         impact_low: "낮음",
         impact_moderate: "보통",
         impact_high: "높음",
-        impact_pancreas_low: "정상적인 인슐린 반응이 예상됩니다.",
+        impact_pancreas_low: "정상적인 인슐린 반응이 예상됩니다。",
         impact_pancreas_moderate: "인슐린 생산에 대한 췌장의 수요 증가.",
         impact_pancreas_high: "높은 인슐린 스파이크, 대사 기능에 부담.",
         impact_energy_low: "안정적인 에너지 수준.",
         impact_energy_moderate: "급격한 에너지 스파이크, 이후 급격한 피로 가능성.",
-        impact_energy_high: "강렬한 에너지 러시, 이후 상당한 피로가 따를 가능성이 높습니다.",
+        impact_energy_high: "강렬한 에너지 러시, 이후 상당한 피로가 따를 가능성이 높습니다。",
         impact_liver_low: "표준 간 처리.",
-        impact_liver_moderate: "간이 과당을 처리하기 위해 더 열심히 작동합니다.",
+        impact_liver_moderate: "간이 과당을 처리하기 위해 더 열심히 작동합니다。",
         impact_liver_high: "상당한 과당 부하, 지방 저장에 기여.",
         ai_coach_title: "AI 코치 통찰력",
         ai_coach_generating: "통찰력 생성 중...",
-        ai_coach_no_key: "AI 코치가 비활성화되었습니다. 이 기능을 사용하려면 Gemini API 키가 필요합니다.",
+        ai_coach_no_key: "AI 코치가 비활성화되었습니다. 이 기능을 사용하려면 Gemini API 키가 필요합니다。",
         premium_dashboard_title: "프리미엄 대시보드",
         historical_trends_title: "주간 설탕 트렌드",
         long_term_insights_title: "장기 AI 통찰력",
@@ -730,7 +740,6 @@ const AICoach: FC<{ drinks: SugaryDrink[]; analysis: Analysis | null; dailySugar
 };
 
 const BodyVisual: FC<{ analysis: Analysis | null; drinkCount: number }> = ({ analysis, drinkCount }) => {
-    const { t } = useTranslation(); // Get translation function
     const getImpactColor = (impact: number) => {
         if (impact > 3.5) return 'rgba(239, 68, 68, 0.6)'; // Red
         if (impact > 1.5) return 'rgba(250, 204, 21, 0.6)'; // Yellow
@@ -877,7 +886,8 @@ const DrinkModal: FC<{ isOpen: boolean; onClose: () => void; onLogDrink: (drink:
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">{t('modal_sugar')}</label>
-                            <input type="number" value={sugarPer100ml} step="0.1" onChange={(e) => setNewSugarPer100ml(Number(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            {/* FIX: Corrected typo from setNewSugarPer100ml to setSugarPer100ml */}
+                            <input type="number" value={sugarPer100ml} step="0.1" onChange={(e) => setSugarPer100ml(Number(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                         </div>
                     </div>
 
@@ -1020,9 +1030,10 @@ interface ManageQuickAddsModalFuelProps {
     userId: string | null;
     db: Firestore | null;
     onQuickAddUpdated: () => void;
+    appId: string;
 }
 
-const ManageQuickAddsModalFuel: FC<ManageQuickAddsModalFuelProps> = ({ isOpen, onClose, userId, db, onQuickAddUpdated }) => {
+const ManageQuickAddsModalFuel: FC<ManageQuickAddsModalFuelProps> = ({ isOpen, onClose, userId, db, onQuickAddUpdated, appId }) => {
     const { t } = useTranslation();
     const [customQuickAdds, setCustomQuickAdds] = useState<CustomQuickAddSugar[]>([]);
     const [newLabel, setNewLabel] = useState('');
@@ -1048,7 +1059,7 @@ const ManageQuickAddsModalFuel: FC<ManageQuickAddsModalFuelProps> = ({ isOpen, o
                 unsubscribe();
             }
         };
-    }, [isOpen, db, userId]);
+    }, [isOpen, db, userId, appId]);
 
     const handleSaveQuickAdd = async () => {
         if (!db || !userId || !newLabel || !newType || newVolume <= 0 || newSugar <= 0) return;
@@ -1165,7 +1176,7 @@ const ManageQuickAddsModalFuel: FC<ManageQuickAddsModalFuelProps> = ({ isOpen, o
 
 // --- PREMIUM COMPONENTS ---
 
-const HistoricalChart: FC<{ db: Firestore | null; userId: string | null; }> = ({ db, userId }) => {
+const HistoricalChart: FC<{ db: Firestore | null; userId: string | null; appId: string; }> = ({ db, userId, appId }) => {
     const { t } = useTranslation();
     const [data, setData] = useState<WeeklyChartData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -1203,7 +1214,7 @@ const HistoricalChart: FC<{ db: Firestore | null; userId: string | null; }> = ({
             setIsLoading(false);
         };
         fetchData();
-    }, [db, userId]);
+    }, [db, userId, appId]);
 
     if (isLoading) {
         return <div className="text-center text-gray-400 p-8">{t('chart_loading')}</div>;
@@ -1229,7 +1240,7 @@ const HistoricalChart: FC<{ db: Firestore | null; userId: string | null; }> = ({
     );
 };
 
-const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySugarGoal: number | null; }> = ({ db, userId, dailySugarGoal }) => {
+const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySugarGoal: number | null; appId: string; }> = ({ db, userId, dailySugarGoal, appId }) => {
     const { t } = useTranslation();
     const [insight, setInsight] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -1243,6 +1254,7 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
         if (!db || !userId) return;
 
         setIsLoading(true);
+        setIsKeyMissing(false);
         const drinksCollectionPath = `artifacts/${appId}/users/${userId}/drinks`;
         const querySnapshot = await getDocs(query(collection(db, drinksCollectionPath)));
         const allDrinks: SugaryDrink[] = [];
@@ -1257,14 +1269,26 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
         }
 
         const totalDrinks = allDrinks.length;
-        const mostCommonDay = new Date(allDrinks[0].timestamp).toLocaleDateString('en-US', { weekday: 'long' });
-        const avgSugar = allDrinks.reduce((sum, d) => sum + d.sugarGrams, 0) / totalDrinks;
+        const totalSugarConsumed = allDrinks.reduce((sum, d) => sum + d.sugarGrams, 0);
+        const avgSugar = totalSugarConsumed / totalDrinks;
+
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayCounts = allDrinks.reduce((acc, drink) => {
+            const day = new Date(drink.timestamp).getDay();
+            acc[day] = (acc[day] || 0) + 1;
+            return acc;
+        }, {} as { [key: number]: number });
+        
+        const mostCommonDayIndex = Object.keys(dayCounts).length > 0 
+            ? Object.keys(dayCounts).reduce((a, b) => dayCounts[parseInt(a)] > dayCounts[parseInt(b)] ? a : b) 
+            : '0';
+        const mostCommonDay = daysOfWeek[parseInt(mostCommonDayIndex)];
 
         let goalContext = "";
         if (dailySugarGoal !== null && dailySugarGoal > 0) {
-            const totalSugarConsumed = allDrinks.reduce((sum, d) => sum + d.sugarGrams, 0);
-            const daysTracked = (new Date().getTime() - new Date(allDrinks[allDrinks.length - 1].timestamp).getTime()) / (1000 * 60 * 60 * 24);
-            const avgDailyConsumption = daysTracked > 0 ? totalSugarConsumed / daysTracked : 0;
+            const firstDay = allDrinks.length > 0 ? new Date(allDrinks.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())[0].timestamp) : new Date();
+            const daysTracked = Math.max(1, (new Date().getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24));
+            const avgDailyConsumption = totalSugarConsumed / daysTracked;
 
             if (avgDailyConsumption > dailySugarGoal) {
                 goalContext = `On average, they exceed their daily goal of ${dailySugarGoal}g.`;
@@ -1275,9 +1299,8 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
 
         const prompt = `
             As an expert on nutrition, you are an AI Coach for the app LumenFuel.
-            A user has logged the following sugary drinks in a session: ${sessionSummary}.
-            This amounts to ${totalSugar}g of sugar.
-            The current analysis shows a high impact on their energy levels and pancreas.
+            A user has logged ${totalDrinks} drinks. Their average drink contains ${avgSugar.toFixed(1)}g of sugar.
+            They tend to consume the most drinks on ${mostCommonDay}.
             ${goalContext}
             Provide a single, concise, actionable, and non-judgmental long-term insight (around 20-30 words).
             Focus on a helpful observation about their overall pattern.
@@ -1305,7 +1328,11 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
         } finally {
             setIsLoading(false);
         }
-    }, [db, userId, t, dailySugarGoal]);
+    }, [db, userId, t, dailySugarGoal, appId]);
+
+    useEffect(() => {
+        generateLongTermInsight();
+    }, [generateLongTermInsight]);
 
     return (
         <div className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-2xl p-6 border border-purple-400/30 shadow-lg">
@@ -1314,7 +1341,9 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
                 <h3 className="text-xl font-bold text-white">{t('long_term_insights_title')}</h3>
             </div>
             <div className="text-purple-100/90 text-sm">
-                {isLoading ? (
+                {isKeyMissing ? (
+                    <p className="text-yellow-400">{t('ai_coach_no_key')}</p>
+                ) : isLoading ? (
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-dashed rounded-full animate-spin border-white"></div>
                         <span>{t('ai_coach_generating')}</span>
@@ -1328,7 +1357,7 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
 };
 
 
-const PremiumDashboard: FC<{ db: Firestore | null; userId: string | null; dailySugarGoal: number | null; }> = ({ db, userId, dailySugarGoal }) => {
+const PremiumDashboard: FC<{ db: Firestore | null; userId: string | null; dailySugarGoal: number | null; appId: string; }> = ({ db, userId, dailySugarGoal, appId }) => {
     const { t } = useTranslation();
     return (
         <div className="lg:col-span-2 space-y-8">
@@ -1337,9 +1366,9 @@ const PremiumDashboard: FC<{ db: Firestore | null; userId: string | null; dailyS
                     <BarChart3 className="text-yellow-400" />
                     <h3 className="text-xl font-bold ml-2">{t('historical_trends_title')}</h3>
                 </div>
-                <HistoricalChart db={db} userId={userId} />
+                <HistoricalChart db={db} userId={userId} appId={appId} />
             </div>
-            <LongTermAICoach db={db} userId={userId} dailySugarGoal={dailySugarGoal} />
+            <LongTermAICoach db={db} userId={userId} dailySugarGoal={dailySugarGoal} appId={appId} />
         </div>
     );
 };
@@ -1351,9 +1380,10 @@ interface DailyGoalFuelProps {
     dailySugarGoal: number | null;
     setDailySugarGoal: (goal: number | null) => void;
     totalSugarToday: number;
+    appId: string;
 }
 
-const DailyGoalFuel: FC<DailyGoalFuelProps> = ({ userId, db, dailySugarGoal, setDailySugarGoal, totalSugarToday }) => {
+const DailyGoalFuel: FC<DailyGoalFuelProps> = ({ userId, db, dailySugarGoal, setDailySugarGoal, totalSugarToday, appId }) => {
     const { t } = useTranslation();
     const [goalInput, setGoalInput] = useState<string>(dailySugarGoal?.toString() || '');
     const [message, setMessage] = useState('');
@@ -1491,7 +1521,12 @@ const AchievementsModalFuel: FC<AchievementsModalFuelProps> = ({ isOpen, onClose
 };
 
 
-// Main App Component
+// --- Main App Component ---
+// FIX: Declare global variables for the environment
+declare const __firebase_config: string;
+declare const __initial_auth_token: string;
+declare const __app_id: string;
+
 function AppContent() {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1513,29 +1548,57 @@ function AppContent() {
     const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(null); // State for daily challenge
     const [isLoadingPremium, setIsLoadingPremium] = useState(false);
     const [showLateLogModal, setShowLateLogModal] = useState(false); // New state for late add modal
-    const [showDynamicBodyVisual, setShowDynamicBodyVisual] = useState(false); // New state for dynamic body visualizer
 
+    const finalAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
 
     useEffect(() => {
-        if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+        // FIX: Use environment variables for configuration to make the app portable.
+        const finalFirebaseConfig = typeof __firebase_config !== 'undefined'
+            ? JSON.parse(__firebase_config)
+            : firebaseConfig;
+
+        if (Object.keys(finalFirebaseConfig).length === 0 || !finalFirebaseConfig.apiKey) {
             setIsConfigMissing(true);
             return;
         }
+
         setIsConfigMissing(false);
+
         try {
-            const app: FirebaseApp = initializeApp(firebaseConfig);
+            const app: FirebaseApp = initializeApp(finalFirebaseConfig);
             const firestoreDb: Firestore = getFirestore(app);
-            const firebaseAuth: Auth = getAuth(app);
+            const auth: Auth = getAuth(app);
             setDb(firestoreDb);
-            const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+
+            // FIX: Implement the correct authentication flow using signInWithCustomToken
+            // with a fallback to signInAnonymously. This resolves the 'auth/admin-restricted-operation' error.
+            const authenticateUser = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase authentication failed:", error);
+                }
+            };
+
+            authenticateUser();
+
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
                 if (user) {
                     setUserId(user.uid);
                 } else {
-                    await signInAnonymously(firebaseAuth);
+                    setUserId(null); // Handle user sign-out
                 }
             });
+
             return () => unsubscribe();
-        } catch (e) { console.error("Error initializing Firebase:", e); }
+        } catch (e) {
+            console.error("Error initializing Firebase:", e);
+            setIsConfigMissing(true); // Show config error on initialization failure
+        }
     }, []);
 
     // Check for successful payment on component mount
@@ -1557,7 +1620,7 @@ function AppContent() {
     useEffect(() => {
         let unsubscribeDrinks: (() => void) | undefined;
         if (db && userId) {
-            const drinksCollectionPath = `artifacts/${appId}/users/${userId}/drinks`;
+            const drinksCollectionPath = `artifacts/${finalAppId}/users/${userId}/drinks`;
             const q = query(collection(db, drinksCollectionPath));
             unsubscribeDrinks = onSnapshot(q, (querySnapshot) => {
                 const drinksData: SugaryDrink[] = [];
@@ -1566,12 +1629,6 @@ function AppContent() {
                 setDrinks(drinksData);
                 setLastLogTime(Date.now()); // Update last log time on any new log
                 setShowReminder(false); // Dismiss reminder if new data comes in
-                // If there are drinks, enable the dynamic body visual
-                if (drinksData.length > 0) {
-                    setShowDynamicBodyVisual(true);
-                } else {
-                    setShowDynamicBodyVisual(false);
-                }
             }, (error) => { console.error("Error listening to drinks collection:", error); });
         }
         return () => {
@@ -1579,12 +1636,12 @@ function AppContent() {
                 unsubscribeDrinks();
             }
         };
-    }, [db, userId]);
+    }, [db, userId, finalAppId]);
 
     const fetchCustomQuickAdds = useCallback(() => {
         let unsubscribeCustomQuickAdds: (() => void) | undefined;
         if (db && userId) {
-            const q = query(collection(db, `artifacts/${appId}/users/${userId}/customQuickAddsSugar`));
+            const q = query(collection(db, `artifacts/${finalAppId}/users/${userId}/customQuickAddsSugar`));
             unsubscribeCustomQuickAdds = onSnapshot(q, (snapshot) => {
                 const fetchedQuickAdds: CustomQuickAddSugar[] = [];
                 snapshot.forEach(doc => {
@@ -1598,7 +1655,7 @@ function AppContent() {
                 unsubscribeCustomQuickAdds();
             }
         };
-    }, [db, userId]);
+    }, [db, userId, finalAppId]);
 
     useEffect(() => {
         const unsubscribe = fetchCustomQuickAdds();
@@ -1609,7 +1666,7 @@ function AppContent() {
     useEffect(() => {
         let unsubscribeDailyGoal: (() => void) | undefined;
         if (!db || !userId) return;
-        const docRef = doc(db, `artifacts/${appId}/users/${userId}/goals/dailySugar`);
+        const docRef = doc(db, `artifacts/${finalAppId}/users/${userId}/goals/dailySugar`);
         unsubscribeDailyGoal = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 setDailySugarGoal(docSnap.data().goal);
@@ -1624,13 +1681,13 @@ function AppContent() {
                 unsubscribeDailyGoal();
             }
         };
-    }, [db, userId]);
+    }, [db, userId, finalAppId]);
 
     // Fetch and listen to achievements
     useEffect(() => {
         let unsubscribeAchievements: (() => void) | undefined;
         if (db && userId) {
-            const q = query(collection(db, `artifacts/${appId}/users/${userId}/achievements`));
+            const q = query(collection(db, `artifacts/${finalAppId}/users/${userId}/achievements`));
             unsubscribeAchievements = onSnapshot(q, (snapshot) => {
                 const fetchedAchievements: Achievement[] = [];
                 snapshot.forEach(doc => {
@@ -1644,14 +1701,14 @@ function AppContent() {
                 unsubscribeAchievements();
             }
         };
-    }, [db, userId]);
+    }, [db, userId, finalAppId]);
 
     // Fetch and manage daily challenge
     useEffect(() => {
         let unsubscribeChallenge: (() => void) | undefined;
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         if (db && userId) {
-            const challengeDocRef = doc(db, `artifacts/${appId}/users/${userId}/dailyChallenge/${today}`);
+            const challengeDocRef = doc(db, `artifacts/${finalAppId}/users/${userId}/dailyChallenge/${today}`);
             unsubscribeChallenge = onSnapshot(challengeDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     setDailyChallenge(docSnap.data() as DailyChallenge);
@@ -1674,21 +1731,131 @@ function AppContent() {
                 unsubscribeChallenge();
             }
         };
-    }, [db, userId]);
+    }, [db, userId, finalAppId]);
 
 
     useEffect(() => { setAnalysis(analyzeSugarConsumption(drinks, t)); }, [drinks, t]);
 
+    const totalSugarToday = drinks.filter(drink => new Date(drink.timestamp).getTime() >= new Date().setHours(0, 0, 0, 0))
+        .reduce((sum, drink) => sum + drink.sugarGrams, 0);
+
+    const checkAchievements = useCallback(async (currentDrinkCount: number) => {
+        if (!db || !userId) return;
+
+        const earnedAchievementIds = new Set(achievements.map(a => a.id));
+        const addAchievement = async (id: string, nameKey: string, descriptionKey: string) => {
+            if (!earnedAchievementIds.has(id)) {
+                await addDoc(collection(db, `artifacts/${finalAppId}/users/${userId}/achievements`), {
+                    id, nameKey, descriptionKey, earnedDate: new Date().toISOString(),
+                });
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        };
+
+        // First Taste
+        if (currentDrinkCount === 1) {
+            addAchievement("first_log", "achievement_first_log_name", "achievement_first_log_desc");
+        }
+        
+        // Streak Achievements (simplified - a real streak needs daily checks for *all* days)
+        if (currentDrinkCount >= 7) addAchievement("7_day_streak", "achievement_7_day_streak_name", "achievement_7_day_streak_desc");
+        if (currentDrinkCount >= 30) addAchievement("30_day_streak", "achievement_30_day_streak_name", "achievement_30_day_streak_desc");
+
+
+        // Goal Setter Novice
+        if (dailySugarGoal !== null && totalSugarToday >= dailySugarGoal) {
+            const goalHitsRef = doc(db, `artifacts/${finalAppId}/users/${userId}/stats/dailyGoalHitsSugar`);
+            const docSnap = await getDoc(goalHitsRef);
+            let currentGoalHits = docSnap.exists() ? docSnap.data().count || 0 : 0;
+            
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const lastGoalHitDate = docSnap.exists() ? docSnap.data().lastHitDate : null;
+            const todayISO = today.toISOString().split('T')[0];
+            if (lastGoalHitDate !== todayISO) { // Only increment if not already hit today
+                currentGoalHits++;
+                await setDoc(goalHitsRef, { count: currentGoalHits, lastHitDate: todayISO }, { merge: true });
+
+                if (currentGoalHits >= 5) {
+                    addAchievement("5_goal", "achievement_5_goal_name", "achievement_5_goal_desc");
+                }
+            }
+        }
+
+        // Total Drinks milestones
+        if (currentDrinkCount >= 10) addAchievement("10_drinks", "achievement_10_drinks_name", "achievement_10_drinks_desc");
+        if (currentDrinkCount >= 50) addAchievement("50_drinks", "achievement_50_drinks_name", "achievement_50_drinks_desc");
+        if (currentDrinkCount >= 100) addAchievement("100_drinks", "achievement_100_drinks_name", "achievement_100_drinks_desc");
+
+    }, [db, userId, achievements, dailySugarGoal, totalSugarToday, finalAppId]);
+
+    const checkDailyChallengeCompletion = useCallback(async (lastLoggedDrink: Omit<SugaryDrink, 'id'>) => {
+        if (!db || !userId || !dailyChallenge || dailyChallenge.completed) return;
+
+        const today = new Date().toISOString().split('T')[0];
+        const challengeDocRef = doc(db, `artifacts/${finalAppId}/users/${userId}/dailyChallenge/${today}`);
+        let challengeCompleted = false;
+
+        const isToday = new Date(lastLoggedDrink.timestamp).toISOString().split('T')[0] === today;
+        const drinksTodayCount = drinks.filter(d => new Date(d.timestamp).toISOString().split('T')[0] === today).length + (isToday ? 1 : 0);
+        const sugarTodayWithNewDrink = totalSugarToday + (isToday ? lastLoggedDrink.sugarGrams : 0);
+
+        switch (dailyChallenge.type) {
+            case 'log_n_drinks':
+                if (drinksTodayCount >= (dailyChallenge.value || 0)) {
+                    challengeCompleted = true;
+                }
+                break;
+            case 'stay_below_goal':
+                if (dailySugarGoal !== null && sugarTodayWithNewDrink <= (dailyChallenge.value || dailySugarGoal)) {
+                    challengeCompleted = true;
+                }
+                break;
+            case 'use_custom_quick_add':
+                const sugarPer100ml = (lastLoggedDrink.sugarGrams / lastLoggedDrink.volume) * 100;
+                const customAddUsed = customQuickAdds.some(qa =>
+                    qa.type === lastLoggedDrink.type &&
+                    qa.volume === lastLoggedDrink.volume &&
+                    Math.abs(qa.sugar - sugarPer100ml) < 0.01
+                );
+                if (customAddUsed) {
+                    challengeCompleted = true;
+                }
+                break;
+        }
+
+        if (challengeCompleted) {
+            await setDoc(challengeDocRef, { ...dailyChallenge, completed: true }, { merge: true });
+            setDailyChallenge(prev => prev ? { ...prev, completed: true } : null);
+            confetti({
+                particleCount: 150,
+                spread: 90,
+                origin: { y: 0.8 }
+            });
+        }
+    }, [db, userId, dailyChallenge, drinks, dailySugarGoal, totalSugarToday, customQuickAdds, finalAppId]);
+
+    // This effect will now handle calling the check functions after the state has been updated.
+    useEffect(() => {
+        if (drinks.length > 0) {
+            checkAchievements(drinks.length);
+            // The daily challenge check should happen immediately on log, so we keep that in handleLogDrink.
+        }
+    }, [drinks, checkAchievements]);
+
     const handleLogDrink = async (drinkData: Omit<SugaryDrink, 'id'>) => {
         if (db && userId) {
             try {
-                const drinksCollectionPath = `artifacts/${appId}/users/${userId}/drinks`;
+                const drinksCollectionPath = `artifacts/${finalAppId}/users/${userId}/drinks`;
                 await addDoc(collection(db, drinksCollectionPath), drinkData);
-                setLastLogTime(Date.now()); // Update last log time
-                setShowReminder(false); // Dismiss reminder
-                checkAchievements(drinks.length + 1, drinkData); // Check achievements after logging
-                checkDailyChallengeCompletion(drinks.length + 1, drinkData); // Check daily challenge completion
-                if (navigator.vibrate) { // Haptic feedback
+                setLastLogTime(Date.now());
+                setShowReminder(false);
+                checkDailyChallengeCompletion(drinkData);
+                if (navigator.vibrate) {
                     navigator.vibrate(50);
                 }
             } catch (error) { console.error("Error adding drink to Firestore: ", error); }
@@ -1698,10 +1865,7 @@ function AppContent() {
     const handleDeleteDrink = async (drinkId: string) => {
         if (db && userId) {
             try {
-                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/drinks/${drinkId}`));
-                // Re-check achievements after deletion if necessary (e.g., if a goal-hitting drink was deleted)
-                // For simplicity, we'll just re-evaluate current achievements based on remaining data.
-                // A more robust system might re-run checkAchievements on current drinks array.
+                await deleteDoc(doc(db, `artifacts/${finalAppId}/users/${userId}/drinks/${drinkId}`));
             } catch (error) { console.error("Error deleting drink:", error); }
         }
     };
@@ -1715,17 +1879,9 @@ function AppContent() {
 
         setIsLoadingPremium(true);
         try {
-            // Updated checkoutApiUrl to your Vercel backend
             const checkoutApiUrl = 'https://stripe-backend-api-xi-seven.vercel.app/api/create-checkout-session'; 
-            // Correct Price ID for LumenFuel
             const priceId = 'price_1RoPQ6PEmeNnPDdSW6nyZN5z'; 
             const redirectUrl = window.location.origin; 
-
-            console.log("Sending request to Vercel backend (LumenFuel)...");
-            console.log("checkoutApiUrl:", checkoutApiUrl);
-            console.log("priceId:", priceId);
-            console.log("userId:", userId);
-            console.log("redirectUrl:", redirectUrl);
 
             const response = await fetch(checkoutApiUrl, {
                 method: 'POST',
@@ -1740,8 +1896,6 @@ function AppContent() {
             });
 
             const data = await response.json();
-            console.log("Received response from Vercel backend (LumenFuel):", data);
-            console.log("Stripe Checkout URL (LumenFuel):", data.url);
 
             if (response.ok && data.url) {
                 window.location.assign(data.url); 
@@ -1761,115 +1915,10 @@ function AppContent() {
 
     const totalSugar = drinks.reduce((sum, drink) => sum + drink.sugarGrams, 0).toFixed(1);
 
-    // Calculate total sugar consumed today for goal tracking
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const totalSugarToday = drinks.filter(drink => new Date(drink.timestamp).getTime() >= startOfToday.getTime())
-                                    .reduce((sum, drink) => sum + drink.sugarGrams, 0);
-
-    // --- Achievement Logic ---
-    const checkAchievements = useCallback(async (currentDrinkCount: number, lastLoggedDrink: SugaryDrink) => {
-        if (!db || !userId) return;
-
-        const earnedAchievementIds = new Set(achievements.map(a => a.id));
-        const addAchievement = async (id: string, nameKey: string, descriptionKey: string) => {
-            if (!earnedAchievementIds.has(id)) {
-                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/achievements`), {
-                    id, nameKey, descriptionKey, earnedDate: new Date().toISOString(),
-                });
-                confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 }
-                });
-            }
-        };
-
-        // First Taste
-        if (currentDrinkCount === 1) {
-            addAchievement("first_log", "achievement_first_log_name", "achievement_first_log_desc");
-        }
-
-        // Streak Achievements (simplified - a real streak needs daily checks for *all* days)
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        
-        if (currentDrinkCount >= 7) addAchievement("7_day_streak", "achievement_7_day_streak_name", "achievement_7_day_streak_desc");
-        if (currentDrinkCount >= 30) addAchievement("30_day_streak", "achievement_30_day_streak_name", "achievement_30_day_streak_desc");
-
-
-        // Goal Setter Novice
-        if (dailySugarGoal !== null && totalSugarToday >= dailySugarGoal) {
-            const goalHitsRef = doc(db, `artifacts/${appId}/users/${userId}/stats/dailyGoalHitsSugar`);
-            const docSnap = await getDoc(goalHitsRef);
-            let currentGoalHits = docSnap.exists() ? docSnap.data().count || 0 : 0;
-            
-            // Prevent multiple hits for the same day
-            const lastGoalHitDate = docSnap.exists() ? docSnap.data().lastHitDate : null;
-            const todayISO = today.toISOString().split('T')[0];
-            if (lastGoalHitDate !== todayISO) { // Only increment if not already hit today
-                currentGoalHits++;
-                await setDoc(goalHitsRef, { count: currentGoalHits, lastHitDate: todayISO }, { merge: true });
-
-                if (currentGoalHits >= 5) {
-                    addAchievement("5_goal", "achievement_5_goal_name", "achievement_5_goal_desc");
-                }
-            }
-        }
-
-
-        // Total Drinks milestones
-        if (currentDrinkCount >= 10) addAchievement("10_drinks", "achievement_10_drinks_name", "achievement_10_drinks_desc");
-        if (currentDrinkCount >= 50) addAchievement("50_drinks", "achievement_50_drinks_name", "achievement_50_drinks_desc");
-        if (currentDrinkCount >= 100) addAchievement("100_drinks", "achievement_100_drinks_name", "achievement_100_drinks_desc");
-
-    }, [db, userId, achievements, drinks.length, totalSugarToday, dailySugarGoal]);
-
-    // --- Daily Challenge Completion Logic ---
-    const checkDailyChallengeCompletion = useCallback(async (currentDrinkCount: number, lastLoggedDrink: SugaryDrink) => {
-        if (!db || !userId || !dailyChallenge || dailyChallenge.completed) return;
-
-        const today = new Date().toISOString().split('T')[0];
-        const challengeDocRef = doc(db, `artifacts/${appId}/users/${userId}/dailyChallenge/${today}`);
-        let challengeCompleted = false;
-
-        switch (dailyChallenge.type) {
-            case 'log_n_drinks':
-                const todayDrinks = drinks.filter(d => new Date(d.timestamp).toISOString().split('T')[0] === today).length;
-                if (todayDrinks >= (dailyChallenge.value || 0)) {
-                    challengeCompleted = true;
-                }
-                break;
-            case 'stay_below_goal':
-                if (dailySugarGoal !== null && totalSugarToday <= (dailyChallenge.value || dailySugarGoal)) {
-                    challengeCompleted = true;
-                }
-                break;
-            case 'use_custom_quick_add':
-                // Check if the last logged drink was from a custom quick add
-                const customAddUsed = customQuickAdds.some(qa => qa.type === lastLoggedDrink.type && qa.volume === lastLoggedDrink.volume && qa.sugar === lastLoggedDrink.sugar);
-                if (customAddUsed) {
-                    challengeCompleted = true;
-                }
-                break;
-        }
-
-        if (challengeCompleted) {
-            await setDoc(challengeDocRef, { ...dailyChallenge, completed: true }, { merge: true });
-            setDailyChallenge(prev => prev ? { ...prev, completed: true } : null);
-            confetti({
-                particleCount: 150,
-                spread: 90,
-                origin: { y: 0.8 }
-            });
-        }
-    }, [db, userId, dailyChallenge, drinks, dailySugarGoal, totalSugarToday, customQuickAdds]);
-
-
     // --- Reminder Logic ---
     useEffect(() => {
         const REMINDER_INTERVAL_MINUTES = 15; // Remind every 15 minutes if no activity
-        let reminderTimer: NodeJS.Timeout;
+        let reminderTimer: ReturnType<typeof setInterval>; // FIX: Use correct type for browser timer
 
         const checkAndShowReminder = () => {
             const timeElapsed = (Date.now() - lastLogTime) / (1000 * 60); // minutes
@@ -1878,7 +1927,6 @@ function AppContent() {
             }
         };
 
-        // Set up an interval to check for reminders
         reminderTimer = setInterval(checkAndShowReminder, REMINDER_INTERVAL_MINUTES * 60 * 1000);
 
         return () => clearInterval(reminderTimer); // Cleanup on unmount
@@ -1907,11 +1955,9 @@ function AppContent() {
                 console.log('Successfully shared');
             } catch (error) {
                 console.error('Error sharing:', error);
-                // Fallback for when share fails or is cancelled
                 alert('Could not share. You can copy the text: ' + shareMessage);
             }
         } else {
-            // Fallback for browsers that do not support Web Share API
             const tempTextArea = document.createElement('textarea');
             tempTextArea.value = shareMessage;
             document.body.appendChild(tempTextArea);
@@ -1920,7 +1966,7 @@ function AppContent() {
             document.body.removeChild(tempTextArea);
             alert('Web Share API not supported. Text copied to clipboard: ' + shareMessage);
         }
-    }, [dailySugarGoal, totalSugarToday, t]); // Added dependencies for useCallback
+    }, [dailySugarGoal, totalSugarToday, t]);
 
 
     if (isConfigMissing) {
@@ -1944,7 +1990,6 @@ function AppContent() {
         );
     }
 
-    // Get current region's drink presets for Quick Add buttons
     const currentRegionPresets = globalSugaryDrinkPresets[userRegion] || globalSugaryDrinkPresets['uk'];
     const quickAddTypes = ['soda', 'juice', 'energy_drink', 'sweet_tea', 'sports_drink'];
 
@@ -2009,14 +2054,13 @@ function AppContent() {
                         50% { transform: scale(1.5); opacity: 1; }
                         100% { transform: scale(1.2); opacity: 0; }
                     }
-                     @keyframes bounce-subtle {
+                       @keyframes bounce-subtle {
                         0%, 100% { transform: translateY(0) translateX(-50%); }
                         50% { transform: translateY(-5px) translateX(-50%); }
                     }
                 `}
             </style>
             <DrinkModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onLogDrink={handleLogDrink} currentRegion={userRegion} />
-            {/* New Late Log Modal for LumenFuel */}
             <DrinkModal isOpen={showLateLogModal} onClose={() => setShowLateLogModal(false)} onLogDrink={handleLogDrink} currentRegion={userRegion} showDateTimePicker={true} />
             <ManageQuickAddsModalFuel
                 isOpen={isManageQuickAddsModalOpen}
@@ -2024,24 +2068,24 @@ function AppContent() {
                 userId={userId}
                 db={db}
                 onQuickAddUpdated={fetchCustomQuickAdds}
+                appId={finalAppId}
             />
             <AchievementsModalFuel
                 isOpen={isAchievementsModalOpen}
                 onClose={() => setIsAchievementsModalOpen(false)}
                 achievements={achievements}
             />
-            {/* Updated PremiumModal to use isLoadingPremium prop */}
             <PremiumModal 
                 isOpen={isPremiumModalOpen} 
                 onClose={() => setIsPremiumModalOpen(false)} 
                 onConfirm={handleGoPremium} 
-                isLoading={isLoadingPremium} // Pass isLoadingPremium to the modal
+                isLoading={isLoadingPremium}
             />
 
             <header className="p-4 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-gray-900/80 backdrop-blur-md z-40">
                 <div className="flex items-center gap-3"><Zap className="text-yellow-400" size={32} /><h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-orange-500 text-transparent bg-clip-text">{t('app_title')}</h1></div>
                 <div className="flex items-center gap-4">
-                    <RegionSwitcherFuel currentRegion={userRegion} setRegion={setUserRegion} /> {/* Region Switcher for Fuel App */}
+                    <RegionSwitcherFuel currentRegion={userRegion} setRegion={setUserRegion} />
                     <LanguageSwitcher />
                     <button onClick={handleGoPremium} className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 shadow-lg shadow-yellow-500/20">
                         {t('header_premium_button')}
@@ -2054,21 +2098,18 @@ function AppContent() {
                         <div className="flex justify-between items-start mb-4"><div><h2 className="text-3xl font-bold text-white">{t('section_title_impact')}</h2><p className="text-gray-400">{t('section_subtitle_impact')}</p></div><div className="text-right flex-shrink-0 ml-4"><p className="text-gray-400 text-sm">{t('label_total_sugar')}</p><p className="text-2xl font-bold text-yellow-400">{totalSugar}g</p></div></div>
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-center">
                             <div className="md:col-span-3">
-                                {/* Conditional rendering for static vs. dynamic visual */}
                                 {drinks.length > 0 ? (
                                     <BodyVisual analysis={analysis} drinkCount={drinks.length} />
                                 ) : (
                                     <div className="relative w-full mx-auto aspect-square flex items-center justify-center overflow-hidden">
-                                        {/* Background grid */}
                                         <svg viewBox="0 0 300 300" className="w-full h-full absolute inset-0">
                                             <defs>
-                                                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                                                <pattern id="grid-static" width="30" height="30" patternUnits="userSpaceOnUse">
                                                     <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(107, 114, 128, 0.1)" strokeWidth="1"/>
                                                 </pattern>
                                             </defs>
-                                            <rect width="300" height="300" fill="url(#grid)" />
+                                            <rect width="300" height="300" fill="url(#grid-static)" />
                                         </svg>
-                                        {/* Static LumenFuel Zap icon as placeholder */}
                                         <Zap size={150} className="text-yellow-400/50 relative z-10" />
                                     </div>
                                 )}
@@ -2080,7 +2121,7 @@ function AppContent() {
                         <AICoach drinks={drinks} analysis={analysis} dailySugarGoal={dailySugarGoal} />
                     </div>
                     {isPremium ? (
-                        <PremiumDashboard db={db} userId={userId} dailySugarGoal={dailySugarGoal} />
+                        <PremiumDashboard db={db} userId={userId} dailySugarGoal={dailySugarGoal} appId={finalAppId} />
                     ) : (
                         <div className="lg:col-span-2 space-y-8">
                             <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
@@ -2089,21 +2130,21 @@ function AppContent() {
                                     <button onClick={() => setIsModalOpen(true)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
                                         <Plus size={20} /> {t('button_log_drink')}
                                     </button>
-                                    {/* New button for Late Adds */}
                                     <button onClick={() => setShowLateLogModal(true)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
                                         <History size={20} /> {t('log_late_drink')}
                                     </button>
                                 </div>
-                                {/* Quick Log Buttons */}
                                 <div className="mt-6">
                                     <div className="flex justify-between items-center mb-3">
                                         <h4 className="text-lg font-bold text-white">{t('quick_log_title')}</h4>
-                                        <button onClick={() => setIsManageQuickAddsModalOpen(true)} className="text-gray-400 hover:text-white flex items-center gap-1 text-sm">
-                                            <Settings size={16} /> Manage
-                                        </button>
-                                        <button onClick={() => setIsAchievementsModalOpen(true)} className="text-yellow-400 hover:text-yellow-300 flex items-center gap-1 text-sm ml-auto">
-                                            <Award size={16} /> {t('achievements_title')}
-                                        </button>
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={() => setIsManageQuickAddsModalOpen(true)} className="text-gray-400 hover:text-white flex items-center gap-1 text-sm">
+                                                <Settings size={16} /> Manage
+                                            </button>
+                                            <button onClick={() => setIsAchievementsModalOpen(true)} className="text-yellow-400 hover:text-yellow-300 flex items-center gap-1 text-sm">
+                                                <Award size={16} /> {t('achievements_title')}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         {quickAddTypes.map(type => {
@@ -2119,20 +2160,15 @@ function AppContent() {
                                                 </button>
                                             );
                                         })}
-                                        {/* Custom quick adds */}
-                                        {customQuickAdds.length > 0 ? (
-                                            customQuickAdds.map(qa => (
-                                                <button
-                                                    key={qa.id}
-                                                    onClick={() => handleLogDrink({ type: qa.type, volume: qa.volume, sugarGrams: (qa.volume * qa.sugar / 100), timestamp: new Date().toISOString() })}
-                                                    className="bg-purple-700 hover:bg-purple-600 text-white text-sm py-2 px-3 rounded-lg transition-colors"
-                                                >
-                                                    {qa.label}
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <p className="col-span-3 text-center text-gray-500 py-4">{t('no_custom_quick_adds')}</p>
-                                        )}
+                                        {customQuickAdds.map(qa => (
+                                            <button
+                                                key={qa.id}
+                                                onClick={() => handleLogDrink({ type: qa.type, volume: qa.volume, sugarGrams: (qa.volume * qa.sugar / 100), timestamp: new Date().toISOString() })}
+                                                className="bg-purple-700 hover:bg-purple-600 text-white text-sm py-2 px-3 rounded-lg transition-colors"
+                                            >
+                                                {qa.label}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -2144,7 +2180,7 @@ function AppContent() {
                                     </div>
                                 </div>
                             </div>
-                            <DailyGoalFuel userId={userId} db={db} dailySugarGoal={dailySugarGoal} setDailySugarGoal={setDailySugarGoal} totalSugarToday={totalSugarToday} />
+                            <DailyGoalFuel userId={userId} db={db} dailySugarGoal={dailySugarGoal} setDailySugarGoal={setDailySugarGoal} totalSugarToday={totalSugarToday} appId={finalAppId} />
                             <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
                                 <h3 className="text-xl font-bold mb-4">{t('section_title_log')}</h3>
                                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -2212,4 +2248,3 @@ export default function App() {
         </LanguageProvider>
     );
 }
-
