@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, FC, ReactNode } from 'react';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, Auth, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, Auth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, Firestore, getDocs, setDoc, getDoc } from 'firebase/firestore';
 // Ensured all necessary icons are imported here, and unused ones are removed.
-import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, History, BellRing } from 'lucide-react';
+import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, History, BellRing, LogOut } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // --- Type Definitions for TypeScript ---
@@ -65,7 +65,7 @@ interface DailyChallenge {
 
 // --- Firebase Configuration ---
 const firebaseConfig: { [key: string]: string } = {
-    apiKey: "AIzaSyAJp_KxTH-ICD8CKIUIzMjeN4sumj62Pbk", // FIX: Replaced with provided valid API key
+    apiKey: "AIzaSyAJp_KxTH-ICD8CKIUIzMjeN4sumj62Pbk",
     authDomain: "thyraqfuel.firebaseapp.com",
     projectId: "thyraqfuel",
     storageBucket: "thyraqfuel.firebasestorage.app",
@@ -217,7 +217,6 @@ const translations: Translations = {
         daily_challenge_use_custom_quick_add: "Use a custom quick add button.",
         daily_challenge_no_challenge: "No challenge for today. Enjoy your tracking!",
         log_late_drink: "Log Late Drink",
-        // FIX: Add missing reminder translations
         reminder_title: "Gentle Reminder",
         reminder_text: "It's been a while. Would you like to log any recent drinks?",
         reminder_log_button: "Log Drink",
@@ -882,7 +881,6 @@ const DrinkModal: FC<{ isOpen: boolean; onClose: () => void; onLogDrink: (drink:
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">{t('modal_sugar')}</label>
-                            {/* FIX: Corrected typo from setNewSugarPer100ml to setSugarPer100ml */}
                             <input type="number" value={sugarPer100ml} step="0.1" onChange={(e) => setSugarPer100ml(Number(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                         </div>
                     </div>
@@ -918,7 +916,7 @@ const DrinkModal: FC<{ isOpen: boolean; onClose: () => void; onLogDrink: (drink:
     );
 };
 
-const PremiumModal: FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void; isLoading: boolean; }> = ({ isOpen, onClose, onConfirm, isLoading }) => { // Added isLoading prop
+const PremiumModal: FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void; isLoading: boolean; }> = ({ isOpen, onClose, onConfirm, isLoading }) => {
     const { t } = useTranslation();
     if (!isOpen) return null;
 
@@ -942,13 +940,13 @@ const PremiumModal: FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => 
 };
 
 
-const PremiumFeature: FC<{ title: string; description: string; icon: ReactNode; onUpgrade: () => void; }> = ({ title, description, icon, onUpgrade }) => (
+const PremiumFeature: FC<{ title: string; description: string; icon: ReactNode; onUpgrade: () => void; isAuthReady: boolean; }> = ({ title, description, icon, onUpgrade, isAuthReady }) => (
     <div className="relative bg-gray-800 p-4 rounded-lg border border-gray-700 overflow-hidden">
         <div className="flex items-center mb-2">{icon}<h4 className="font-bold ml-2 text-gray-200">{title}</h4></div>
         <p className="text-xs text-gray-400">{description}</p>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center">
             <Lock className="text-yellow-400 mb-2" size={24} />
-            <button onClick={onUpgrade} className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-bold py-1 px-3 rounded-full transition-colors">Upgrade to Unlock</button>
+            <button onClick={onUpgrade} disabled={!isAuthReady} className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-bold py-1 px-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Upgrade to Unlock</button>
         </div>
     </div>
 );
@@ -1447,12 +1445,12 @@ const DailyGoalFuel: FC<DailyGoalFuelProps> = ({ userId, db, dailySugarGoal, set
 
             <div className="mb-2">
                 <p className="text-gray-300 text-sm">{t('current_progress')}: {totalSugarToday.toFixed(1)}g / {dailySugarGoal !== null ? `${dailySugarGoal.toFixed(1)}g` : t('goal_not_set')}</p>
-                {dailySugarGoal !== null && dailySugarGoal > 0 && (
-                    <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-                        <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${progress}%` }}></div>
-                    </div>
-                )}
             </div>
+            {dailySugarGoal !== null && dailySugarGoal > 0 && (
+                <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+                    <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${progress}%` }}></div>
+                </div>
+            )}
             {dailySugarGoal !== null && totalSugarToday <= dailySugarGoal && (
                 <p className="text-green-400 text-sm">
                     {(dailySugarGoal - totalSugarToday).toFixed(1)}g {t('goal_remaining')}
@@ -1530,7 +1528,9 @@ function AppContent() {
     const [drinks, setDrinks] = useState<SugaryDrink[]>([]);
     const [analysis, setAnalysis] = useState<Analysis | null>(null);
     const [db, setDb] = useState<Firestore | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
+    const [auth, setAuth] = useState<Auth | null>(null);
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthReady, setIsAuthReady] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
     const [isConfigMissing, setIsConfigMissing] = useState(false);
     const [showReminder, setShowReminder] = useState(false); // State for reminder
@@ -1544,6 +1544,7 @@ function AppContent() {
     const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(null); // State for daily challenge
     const [isLoadingPremium, setIsLoadingPremium] = useState(false);
     const [showLateLogModal, setShowLateLogModal] = useState(false); // New state for late add modal
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; }>({ isOpen: false, message: '' });
 
     const finalAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
 
@@ -1563,31 +1564,13 @@ function AppContent() {
         try {
             const app: FirebaseApp = initializeApp(finalFirebaseConfig);
             const firestoreDb: Firestore = getFirestore(app);
-            const auth: Auth = getAuth(app);
+            const firebaseAuth: Auth = getAuth(app);
             setDb(firestoreDb);
+            setAuth(firebaseAuth);
 
-            // FIX: Implement the correct authentication flow using signInWithCustomToken
-            // with a fallback to signInAnonymously. This resolves the 'auth/admin-restricted-operation' error.
-            const authenticateUser = async () => {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase authentication failed:", error);
-                }
-            };
-
-            authenticateUser();
-
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    setUserId(user.uid);
-                } else {
-                    setUserId(null); // Handle user sign-out
-                }
+            const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+                setUser(user);
+                setIsAuthReady(true);
             });
 
             return () => unsubscribe();
@@ -1617,8 +1600,8 @@ function AppContent() {
     // Fetch and listen to drinks collection
     useEffect(() => {
         let unsubscribeDrinks: (() => void) | undefined;
-        if (db && userId) {
-            const drinksCollectionPath = `artifacts/${finalAppId}/users/${userId}/drinks`;
+        if (db && user) {
+            const drinksCollectionPath = `artifacts/${finalAppId}/users/${user.uid}/drinks`;
             const q = query(collection(db, drinksCollectionPath));
             unsubscribeDrinks = onSnapshot(q, (querySnapshot) => {
                 const drinksData: SugaryDrink[] = [];
@@ -1634,12 +1617,12 @@ function AppContent() {
                 unsubscribeDrinks();
             }
         };
-    }, [db, userId, finalAppId]);
+    }, [db, user, finalAppId]);
 
     const fetchCustomQuickAdds = useCallback(() => {
         let unsubscribeCustomQuickAdds: (() => void) | undefined;
-        if (db && userId) {
-            const q = query(collection(db, `artifacts/${finalAppId}/users/${userId}/customQuickAddsSugar`));
+        if (db && user) {
+            const q = query(collection(db, `artifacts/${finalAppId}/users/${user.uid}/customQuickAddsSugar`));
             unsubscribeCustomQuickAdds = onSnapshot(q, (snapshot) => {
                 const fetchedQuickAdds: CustomQuickAddSugar[] = [];
                 snapshot.forEach(doc => {
@@ -1653,7 +1636,7 @@ function AppContent() {
                 unsubscribeCustomQuickAdds();
             }
         };
-    }, [db, userId, finalAppId]);
+    }, [db, user, finalAppId]);
 
     useEffect(() => {
         const unsubscribe = fetchCustomQuickAdds();
@@ -1663,8 +1646,8 @@ function AppContent() {
     // Fetch and listen to daily goal
     useEffect(() => {
         let unsubscribeDailyGoal: (() => void) | undefined;
-        if (!db || !userId) return;
-        const docRef = doc(db, `artifacts/${finalAppId}/users/${userId}/goals/dailySugar`);
+        if (!db || !user) return;
+        const docRef = doc(db, `artifacts/${finalAppId}/users/${user.uid}/goals/dailySugar`);
         unsubscribeDailyGoal = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 setDailySugarGoal(docSnap.data().goal);
@@ -1679,13 +1662,13 @@ function AppContent() {
                 unsubscribeDailyGoal();
             }
         };
-    }, [db, userId, finalAppId]);
+    }, [db, user, finalAppId]);
 
     // Fetch and listen to achievements
     useEffect(() => {
         let unsubscribeAchievements: (() => void) | undefined;
-        if (db && userId) {
-            const q = query(collection(db, `artifacts/${finalAppId}/users/${userId}/achievements`));
+        if (db && user) {
+            const q = query(collection(db, `artifacts/${finalAppId}/users/${user.uid}/achievements`));
             unsubscribeAchievements = onSnapshot(q, (snapshot) => {
                 const fetchedAchievements: Achievement[] = [];
                 snapshot.forEach(doc => {
@@ -1699,14 +1682,14 @@ function AppContent() {
                 unsubscribeAchievements();
             }
         };
-    }, [db, userId, finalAppId]);
+    }, [db, user, finalAppId]);
 
     // Fetch and manage daily challenge
     useEffect(() => {
         let unsubscribeChallenge: (() => void) | undefined;
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        if (db && userId) {
-            const challengeDocRef = doc(db, `artifacts/${finalAppId}/users/${userId}/dailyChallenge/${today}`);
+        if (db && user) {
+            const challengeDocRef = doc(db, `artifacts/${finalAppId}/users/${user.uid}/dailyChallenge/${today}`);
             unsubscribeChallenge = onSnapshot(challengeDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     setDailyChallenge(docSnap.data() as DailyChallenge);
@@ -1729,7 +1712,7 @@ function AppContent() {
                 unsubscribeChallenge();
             }
         };
-    }, [db, userId, finalAppId]);
+    }, [db, user, finalAppId]);
 
 
     useEffect(() => { setAnalysis(analyzeSugarConsumption(drinks, t)); }, [drinks, t]);
@@ -1738,12 +1721,12 @@ function AppContent() {
         .reduce((sum, drink) => sum + drink.sugarGrams, 0);
 
     const checkAchievements = useCallback(async (currentDrinkCount: number) => {
-        if (!db || !userId) return;
+        if (!db || !user) return;
 
         const earnedAchievementIds = new Set(achievements.map(a => a.id));
         const addAchievement = async (id: string, nameKey: string, descriptionKey: string) => {
             if (!earnedAchievementIds.has(id)) {
-                await addDoc(collection(db, `artifacts/${finalAppId}/users/${userId}/achievements`), {
+                await addDoc(collection(db, `artifacts/${finalAppId}/users/${user.uid}/achievements`), {
                     id, nameKey, descriptionKey, earnedDate: new Date().toISOString(),
                 });
                 if (typeof (window as any).confetti === 'function') {
@@ -1768,7 +1751,7 @@ function AppContent() {
 
         // Goal Setter Novice
         if (dailySugarGoal !== null && totalSugarToday >= dailySugarGoal) {
-            const goalHitsRef = doc(db, `artifacts/${finalAppId}/users/${userId}/stats/dailyGoalHitsSugar`);
+            const goalHitsRef = doc(db, `artifacts/${finalAppId}/users/${user.uid}/stats/dailyGoalHitsSugar`);
             const docSnap = await getDoc(goalHitsRef);
             let currentGoalHits = docSnap.exists() ? docSnap.data().count || 0 : 0;
             
@@ -1791,13 +1774,13 @@ function AppContent() {
         if (currentDrinkCount >= 50) addAchievement("50_drinks", "achievement_50_drinks_name", "achievement_50_drinks_desc");
         if (currentDrinkCount >= 100) addAchievement("100_drinks", "achievement_100_drinks_name", "achievement_100_drinks_desc");
 
-    }, [db, userId, achievements, dailySugarGoal, totalSugarToday, finalAppId]);
+    }, [db, user, achievements, dailySugarGoal, totalSugarToday, finalAppId]);
 
     const checkDailyChallengeCompletion = useCallback(async (lastLoggedDrink: Omit<SugaryDrink, 'id'>) => {
-        if (!db || !userId || !dailyChallenge || dailyChallenge.completed) return;
+        if (!db || !user || !dailyChallenge || dailyChallenge.completed) return;
 
         const today = new Date().toISOString().split('T')[0];
-        const challengeDocRef = doc(db, `artifacts/${finalAppId}/users/${userId}/dailyChallenge/${today}`);
+        const challengeDocRef = doc(db, `artifacts/${finalAppId}/users/${user.uid}/dailyChallenge/${today}`);
         let challengeCompleted = false;
 
         const isToday = new Date(lastLoggedDrink.timestamp).toISOString().split('T')[0] === today;
@@ -1839,7 +1822,7 @@ function AppContent() {
                 });
             }
         }
-    }, [db, userId, dailyChallenge, drinks, dailySugarGoal, totalSugarToday, customQuickAdds, finalAppId]);
+    }, [db, user, dailyChallenge, drinks, dailySugarGoal, totalSugarToday, customQuickAdds, finalAppId]);
 
     // This effect will now handle calling the check functions after the state has been updated.
     useEffect(() => {
@@ -1850,9 +1833,9 @@ function AppContent() {
     }, [drinks, checkAchievements]);
 
     const handleLogDrink = async (drinkData: Omit<SugaryDrink, 'id'>) => {
-        if (db && userId) {
+        if (db && user) {
             try {
-                const drinksCollectionPath = `artifacts/${finalAppId}/users/${userId}/drinks`;
+                const drinksCollectionPath = `artifacts/${finalAppId}/users/${user.uid}/drinks`;
                 await addDoc(collection(db, drinksCollectionPath), drinkData);
                 setLastLogTime(Date.now());
                 setShowReminder(false);
@@ -1865,17 +1848,16 @@ function AppContent() {
     };
     
     const handleDeleteDrink = async (drinkId: string) => {
-        if (db && userId) {
+        if (db && user) {
             try {
-                await deleteDoc(doc(db, `artifacts/${finalAppId}/users/${userId}/drinks/${drinkId}`));
+                await deleteDoc(doc(db, `artifacts/${finalAppId}/users/${user.uid}/drinks/${drinkId}`));
             } catch (error) { console.error("Error deleting drink:", error); }
         }
     };
 
     const handleGoPremium = async () => {
-        if (!userId) {
-            console.error("User ID is not available for premium purchase.");
-            alert("Please ensure you are logged in to purchase premium.");
+        if (!user) {
+            setAlertModal({ isOpen: true, message: "Please ensure you are logged in to purchase premium." });
             return;
         }
 
@@ -1892,7 +1874,7 @@ function AppContent() {
                 },
                 body: JSON.stringify({
                     priceId: priceId,
-                    userId: userId,
+                    userId: user.uid,
                     redirectUrl: redirectUrl,
                 }),
             });
@@ -1902,13 +1884,11 @@ function AppContent() {
             if (response.ok && data.url) {
                 window.location.assign(data.url); 
             } else {
-                console.error('Error initiating checkout (LumenFuel):', data.message || 'Unknown error', data.details);
-                alert(`Failed to start payment: ${data.message || 'Unknown error'}. Please try again.`);
+                setAlertModal({ isOpen: true, message: `Failed to start payment: ${data.message || 'Unknown error'}. Please try again.` });
                 setIsLoadingPremium(false);
             }
         } catch (error) {
-            console.error('Network or unexpected error during checkout initiation (LumenFuel):', error);
-            alert('A network error occurred. Please try again.');
+            setAlertModal({ isOpen: true, message: 'A network error occurred. Please try again.' });
             setIsLoadingPremium(false);
         } finally {
             setIsPremiumModalOpen(false); 
@@ -1957,7 +1937,7 @@ function AppContent() {
                 console.log('Successfully shared');
             } catch (error) {
                 console.error('Error sharing:', error);
-                alert('Could not share. You can copy the text: ' + shareMessage);
+                setAlertModal({ isOpen: true, message: 'Could not share. You can copy the text: ' + shareMessage });
             }
         } else {
             const tempTextArea = document.createElement('textarea');
@@ -1966,10 +1946,21 @@ function AppContent() {
             tempTextArea.select();
             document.execCommand('copy');
             document.body.removeChild(tempTextArea);
-            alert('Web Share API not supported. Text copied to clipboard: ' + shareMessage);
+            setAlertModal({ isOpen: true, message: 'Web Share API not supported. Text copied to clipboard: ' + shareMessage });
         }
     }, [dailySugarGoal, totalSugarToday, t]);
 
+    if (!isAuthReady) {
+        return (
+            <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+                <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-yellow-400"></div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <AuthScreen auth={auth} setAlertModal={setAlertModal} />;
+    }
 
     if (isConfigMissing) {
         return (
@@ -2062,12 +2053,17 @@ function AppContent() {
                     }
                 `}
             </style>
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                message={alertModal.message}
+                onClose={() => setAlertModal({ isOpen: false, message: '' })}
+            />
             <DrinkModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onLogDrink={handleLogDrink} currentRegion={userRegion} />
             <DrinkModal isOpen={showLateLogModal} onClose={() => setShowLateLogModal(false)} onLogDrink={handleLogDrink} currentRegion={userRegion} showDateTimePicker={true} />
             <ManageQuickAddsModalFuel
                 isOpen={isManageQuickAddsModalOpen}
                 onClose={() => setIsManageQuickAddsModalOpen(false)}
-                userId={userId}
+                userId={user.uid}
                 db={db}
                 onQuickAddUpdated={fetchCustomQuickAdds}
                 appId={finalAppId}
@@ -2089,8 +2085,12 @@ function AppContent() {
                 <div className="flex items-center gap-4">
                     <RegionSwitcherFuel currentRegion={userRegion} setRegion={setUserRegion} />
                     <LanguageSwitcher />
-                    <button onClick={handleGoPremium} className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 shadow-lg shadow-yellow-500/20">
+                    <button onClick={handleGoPremium} disabled={!isAuthReady} className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                         {t('header_premium_button')}
+                    </button>
+                    <div className="text-sm text-gray-400">{user.email}</div>
+                    <button onClick={() => auth && signOut(auth)} className="text-gray-400 hover:text-white">
+                        <LogOut size={20} />
                     </button>
                 </div>
             </header>
@@ -2123,7 +2123,7 @@ function AppContent() {
                         <AICoach drinks={drinks} analysis={analysis} dailySugarGoal={dailySugarGoal} />
                     </div>
                     {isPremium ? (
-                        <PremiumDashboard db={db} userId={userId} dailySugarGoal={dailySugarGoal} appId={finalAppId} />
+                        <PremiumDashboard db={db} userId={user.uid} dailySugarGoal={dailySugarGoal} appId={finalAppId} />
                     ) : (
                         <div className="lg:col-span-2 space-y-8">
                             <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
@@ -2182,7 +2182,7 @@ function AppContent() {
                                     </div>
                                 </div>
                             </div>
-                            <DailyGoalFuel userId={userId} db={db} dailySugarGoal={dailySugarGoal} setDailySugarGoal={setDailySugarGoal} totalSugarToday={totalSugarToday} appId={finalAppId} />
+                            <DailyGoalFuel userId={user.uid} db={db} dailySugarGoal={dailySugarGoal} setDailySugarGoal={setDailySugarGoal} totalSugarToday={totalSugarToday} appId={finalAppId} />
                             <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
                                 <h3 className="text-xl font-bold mb-4">{t('section_title_log')}</h3>
                                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -2214,8 +2214,8 @@ function AppContent() {
                                     </button>
                                 </div>
                                 <div className="space-y-4">
-                                    <PremiumFeature title={t('premium_feature_trends_title') as string} description={t('premium_feature_trends_desc') as string} icon={<BarChart3 className="text-gray-400" />} onUpgrade={handleGoPremium} />
-                                    <PremiumFeature title={t('premium_feature_insights_title') as string} description={t('premium_feature_insights_desc') as string} icon={<TrendingUp className="text-gray-400" />} onUpgrade={handleGoPremium} />
+                                    <PremiumFeature title={t('premium_feature_trends_title') as string} description={t('premium_feature_trends_desc') as string} icon={<BarChart3 className="text-gray-400" />} onUpgrade={handleGoPremium} isAuthReady={isAuthReady} />
+                                    <PremiumFeature title={t('premium_feature_insights_title') as string} description={t('premium_feature_insights_desc') as string} icon={<TrendingUp className="text-gray-400" />} onUpgrade={handleGoPremium} isAuthReady={isAuthReady} />
                                 </div>
                             </div>
                         </div>
@@ -2242,6 +2242,87 @@ function AppContent() {
         </div>
     );
 }
+
+const AuthScreen: FC<{ auth: Auth | null; setAlertModal: (modal: { isOpen: boolean; message: string; }) => void; }> = ({ auth, setAlertModal }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLogin, setIsLogin] = useState(true);
+    const [error, setError] = useState('');
+
+    const handleAuthAction = async () => {
+        if (!auth) return;
+        setError('');
+        try {
+            if (isLogin) {
+                await signInWithEmailAndPassword(auth, email, password);
+            } else {
+                await createUserWithEmailAndPassword(auth, email, password);
+            }
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    return (
+        <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-sm mx-auto">
+                <div className="flex items-center justify-center gap-3 mb-8">
+                    <Zap className="text-yellow-400" size={48} />
+                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-orange-500 text-transparent bg-clip-text">LumenFuel</h1>
+                </div>
+                <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+                    <h2 className="text-2xl font-bold text-center mb-6">{isLogin ? 'Log In' : 'Sign Up'}</h2>
+                    {error && <p className="bg-red-500/20 text-red-400 text-sm p-3 rounded-lg mb-4">{error}</p>}
+                    <div className="space-y-4">
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Email"
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Password"
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                        <button
+                            onClick={handleAuthAction}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300"
+                        >
+                            {isLogin ? 'Log In' : 'Sign Up'}
+                        </button>
+                    </div>
+                    <p className="text-center text-sm text-gray-400 mt-6">
+                        {isLogin ? "Don't have an account?" : "Already have an account?"}
+                        <button onClick={() => setIsLogin(!isLogin)} className="font-semibold text-blue-400 hover:text-blue-300 ml-1">
+                            {isLogin ? 'Sign Up' : 'Log In'}
+                        </button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AlertModal: FC<{ isOpen: boolean; message: string; onClose: () => void; }> = ({ isOpen, message, onClose }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-gray-700 text-center">
+                <div className="flex justify-center mb-4">
+                    <AlertTriangle className="text-yellow-400" size={40} />
+                </div>
+                <p className="text-gray-300 mb-6">{message}</p>
+                <button onClick={onClose} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    OK
+                </button>
+            </div>
+        </div>
+    );
+};
 
 export default function App() {
     useEffect(() => {
