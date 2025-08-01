@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, FC, ReactNode } from 'react';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, Auth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, Firestore, getDocs, setDoc, getDoc } from 'firebase/firestore';
 // Ensured all necessary icons are imported here, and unused ones are removed.
 import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, History, BellRing, LogOut } from 'lucide-react';
@@ -1959,7 +1959,7 @@ function AppContent() {
     }
 
     if (!user) {
-        return <AuthScreen auth={auth} setAlertModal={setAlertModal} />;
+        return <AuthScreen auth={auth} />;
     }
 
     if (isConfigMissing) {
@@ -2243,7 +2243,7 @@ function AppContent() {
     );
 }
 
-const AuthScreen: FC<{ auth: Auth | null; setAlertModal: (modal: { isOpen: boolean; message: string; }) => void; }> = ({ auth, setAlertModal }) => {
+const AuthScreen: FC<{ auth: Auth | null; }> = ({ auth }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLogin, setIsLogin] = useState(true);
@@ -2351,4 +2351,5 @@ export default function App() {
         </LanguageProvider>
     );
 }
+
 
