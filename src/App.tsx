@@ -2270,3 +2270,4 @@ export default function App() {
         </LanguageProvider>
     );
 }
+
