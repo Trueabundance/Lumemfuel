@@ -73,7 +73,7 @@ const firebaseConfig: { [key: string]: string } = {
     appId: "1:828610666370:web:66bd9755838a9aeedc399b"
 };
 
-const appId = 'lumenfuel-app-standalone'; // Kept user's provided appId for this app
+const appId = 'lumenfuel-app-standalone';
 
 // --- Gemini API Key ---
 const GEMINI_API_KEY = "AIzaSyCh7YqkGuLqlWfZr2OzfqJrl6dilDO4YVM";
@@ -114,6 +114,7 @@ const translations: Translations = {
         log_empty: "No drinks logged yet.",
         section_title_premium: "Premium Features",
         modal_title: "Log a Sugary Drink",
+        modal_title_late: "Log a Past Drink",
         modal_drink_type: "Drink Type",
         modal_volume: "Volume (ml)",
         modal_sugar: "Sugar (g / 100ml)",
@@ -236,6 +237,7 @@ const translations: Translations = {
         log_empty: "Noch keine Getränke protokolliert.",
         section_title_premium: "Premium-Funktionen",
         modal_title: "Zuckerhaltiges Getränk protokollieren",
+        modal_title_late: "Vergangenes Getränk protokollieren",
         modal_drink_type: "Getränketyp",
         modal_volume: "Volumen (ml)",
         modal_sugar: "Zucker (g / 100ml)",
@@ -338,7 +340,11 @@ const translations: Translations = {
         daily_challenge_stay_below_goal: "Bleiben Sie heute unter {value}g Zucker.",
         daily_challenge_use_custom_quick_add: "Verwenden Sie eine benutzerdefinierte Schnell-Hinzufügung.",
         daily_challenge_no_challenge: "Keine Herausforderung für heute. Viel Spaß beim Protokollieren!",
-        log_late_drink: "Getränk nachtragen", // New German translation
+        log_late_drink: "Nachträglich protokollieren",
+        reminder_title: "Sanfte Erinnerung",
+        reminder_text: "Es ist eine Weile her. Möchten Sie kürzlich konsumierte Getränke protokollieren?",
+        reminder_log_button: "Getränk protokollieren",
+        reminder_dismiss_button: "Schließen",
     },
     'fr-CA': { // French (Canadian) translations
         app_title: "LumenFuel",
@@ -354,6 +360,7 @@ const translations: Translations = {
         log_empty: "Aucune boisson enregistrée pour le moment.",
         section_title_premium: "Fonctionnalités Premium",
         modal_title: "Enregistrer une boisson sucrée",
+        modal_title_late: "Enregistrer une boisson passée",
         modal_drink_type: "Type de boisson",
         modal_volume: "Volume (ml)",
         modal_sugar: "Sucre (g / 100ml)",
@@ -429,6 +436,11 @@ const translations: Translations = {
         goal_not_set: "Aucun objectif quotidien défini.",
         goal_exceeded: "Objectif dépassé!",
         goal_remaining: "restant",
+        log_late_drink: "Enregistrer en retard",
+        reminder_title: "Rappel Doux",
+        reminder_text: "Cela fait un moment. Souhaitez-vous enregistrer des boissons récentes?",
+        reminder_log_button: "Enregistrer",
+        reminder_dismiss_button: "Rejeter",
     },
     ja: { // Japanese translations
         app_title: "ルーメンフューエル",
@@ -444,6 +456,7 @@ const translations: Translations = {
         log_empty: "まだ飲酒が記録されていません。",
         section_title_premium: "プレミアム機能",
         modal_title: "甘い飲み物を記録",
+        modal_title_late: "過去の飲み物を記録",
         modal_drink_type: "飲み物の種類",
         modal_volume: "容量 (ml)",
         modal_sugar: "砂糖 (g / 100ml)",
@@ -494,21 +507,27 @@ const translations: Translations = {
         region_selector_title: "地域",
         region_uk: "イギリス",
         region_us: "アメリカ合衆国",
+        log_late_drink: "遅れて記録",
+        reminder_title: "優しいリマインダー",
+        reminder_text: "しばらく経ちました。最近の飲み物を記録しますか？",
+        reminder_log_button: "飲み物を記録",
+        reminder_dismiss_button: "閉じる",
     },
     ko: { // Korean translations
         app_title: "루멘퓨얼",
         header_premium_button: "프리미엄으로 전환",
         section_title_impact: "실시간 신체 영향",
-        section_subtitle_impact: "설탕의 단기적 영향에 대한 교육 모델입니다。",
+        section_subtitle_impact: "설탕의 단기적 영향에 대한 교육 모델입니다.",
         label_total_sugar: "총 설탕",
         section_title_control: "연료 섭취",
         button_log_drink: "음료 기록",
         disclaimer_title: "면책 조항",
-        disclaimer_text: "루멘퓨얼은 교육 도구이며 의학적 조언이 아닙니다. 건강 관련 조언은 전문가와 상담하십시오。",
+        disclaimer_text: "루멘퓨얼은 교육 도구이며 의학적 조언이 아닙니다. 건강 관련 조언은 전문가와 상담하십시오.",
         section_title_log: "현재 음료 기록",
-        log_empty: "아직 기록된 음료가 없습니다。",
+        log_empty: "아직 기록된 음료가 없습니다.",
         section_title_premium: "프리미엄 기능",
         modal_title: "설탕 음료 기록",
+        modal_title_late: "과거 음료 기록",
         modal_drink_type: "음료 종류",
         modal_volume: "용량 (ml)",
         modal_sugar: "설탕 (g / 100ml)",
@@ -521,18 +540,18 @@ const translations: Translations = {
         impact_low: "낮음",
         impact_moderate: "보통",
         impact_high: "높음",
-        impact_pancreas_low: "정상적인 인슐린 반응이 예상됩니다。",
+        impact_pancreas_low: "정상적인 인슐린 반응이 예상됩니다.",
         impact_pancreas_moderate: "인슐린 생산에 대한 췌장의 수요 증가.",
         impact_pancreas_high: "높은 인슐린 스파이크, 대사 기능에 부담.",
         impact_energy_low: "안정적인 에너지 수준.",
         impact_energy_moderate: "급격한 에너지 스파이크, 이후 급격한 피로 가능성.",
-        impact_energy_high: "강렬한 에너지 러시, 이후 상당한 피로가 따를 가능성이 높습니다。",
+        impact_energy_high: "강렬한 에너지 러시, 이후 상당한 피로가 따를 가능성이 높습니다.",
         impact_liver_low: "표준 간 처리.",
-        impact_liver_moderate: "간이 과당을 처리하기 위해 더 열심히 작동합니다。",
+        impact_liver_moderate: "간이 과당을 처리하기 위해 더 열심히 작동합니다.",
         impact_liver_high: "상당한 과당 부하, 지방 저장에 기여.",
         ai_coach_title: "AI 코치 통찰력",
         ai_coach_generating: "통찰력 생성 중...",
-        ai_coach_no_key: "AI 코치가 비활성화되었습니다. 이 기능을 사용하려면 Gemini API 키가 필요합니다。",
+        ai_coach_no_key: "AI 코치가 비활성화되었습니다. 이 기능을 사용하려면 Gemini API 키가 필요합니다.",
         premium_dashboard_title: "프리미엄 대시보드",
         historical_trends_title: "주간 설탕 트렌드",
         long_term_insights_title: "장기 AI 통찰력",
@@ -559,6 +578,11 @@ const translations: Translations = {
         region_selector_title: "지역",
         region_uk: "영국",
         region_us: "미국",
+        log_late_drink: "늦게 기록",
+        reminder_title: "부드러운 알림",
+        reminder_text: "오랜만입니다. 최근에 마신 음료를 기록하시겠습니까?",
+        reminder_log_button: "음료 기록",
+        reminder_dismiss_button: "닫기",
     }
 };
 
@@ -860,7 +884,7 @@ const DrinkModal: FC<{ isOpen: boolean; onClose: () => void; onLogDrink: (drink:
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-700">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold text-white">{t('modal_title')}</h2>
+                    <h2 className="text-2xl font-bold text-white">{showDateTimePicker ? t('modal_title_late') : t('modal_title')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <form onSubmit={handleSubmit}>
@@ -1238,17 +1262,14 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
     const { t } = useTranslation();
     const [insight, setInsight] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isKeyMissing, setIsKeyMissing] = useState(false);
 
     const generateLongTermInsight = useCallback(async () => {
         if (!GEMINI_API_KEY) {
-            setIsKeyMissing(true);
             return;
         }
         if (!db || !userId) return;
 
         setIsLoading(true);
-        setIsKeyMissing(false);
         const drinksCollectionPath = `artifacts/${appId}/users/${userId}/drinks`;
         const querySnapshot = await getDocs(query(collection(db, drinksCollectionPath)));
         const allDrinks: SugaryDrink[] = [];
@@ -1325,8 +1346,8 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
     }, [db, userId, t, dailySugarGoal, appId]);
 
     useEffect(() => {
-        generateLongTermInsight();
-    }, [generateLongTermInsight]);
+        generateInsight();
+    }, [generateInsight]);
 
     return (
         <div className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-2xl p-6 border border-purple-400/30 shadow-lg">
@@ -1335,9 +1356,7 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
                 <h3 className="text-xl font-bold text-white">{t('long_term_insights_title')}</h3>
             </div>
             <div className="text-purple-100/90 text-sm">
-                {isKeyMissing ? (
-                    <p className="text-yellow-400">{t('ai_coach_no_key')}</p>
-                ) : isLoading ? (
+                {isLoading ? (
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-dashed rounded-full animate-spin border-white"></div>
                         <span>{t('ai_coach_generating')}</span>
@@ -1445,12 +1464,12 @@ const DailyGoalFuel: FC<DailyGoalFuelProps> = ({ userId, db, dailySugarGoal, set
 
             <div className="mb-2">
                 <p className="text-gray-300 text-sm">{t('current_progress')}: {totalSugarToday.toFixed(1)}g / {dailySugarGoal !== null ? `${dailySugarGoal.toFixed(1)}g` : t('goal_not_set')}</p>
+                {dailySugarGoal !== null && totalSugarToday > 0 && (
+                    <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+                        <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${progress}%` }}></div>
+                    </div>
+                )}
             </div>
-            {dailySugarGoal !== null && dailySugarGoal > 0 && (
-                <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-                    <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${progress}%` }}></div>
-                </div>
-            )}
             {dailySugarGoal !== null && totalSugarToday <= dailySugarGoal && (
                 <p className="text-green-400 text-sm">
                     {(dailySugarGoal - totalSugarToday).toFixed(1)}g {t('goal_remaining')}
@@ -1549,7 +1568,6 @@ function AppContent() {
     const finalAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
 
     useEffect(() => {
-        // FIX: Use environment variables for configuration to make the app portable.
         const finalFirebaseConfig = typeof __firebase_config !== 'undefined'
             ? JSON.parse(__firebase_config)
             : firebaseConfig;
@@ -1576,14 +1594,14 @@ function AppContent() {
             return () => unsubscribe();
         } catch (e) {
             console.error("Error initializing Firebase:", e);
-            setIsConfigMissing(true); // Show config error on initialization failure
+            setIsConfigMissing(true);
         }
     }, []);
 
     // Check for successful payment on component mount
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('success') === 'true') { // Changed from payment_success to success
+        if (urlParams.get('success') === 'true') {
             setIsPremium(true);
             if (typeof (window as any).confetti === 'function') {
                 (window as any).confetti({
@@ -1592,12 +1610,11 @@ function AppContent() {
                     origin: { y: 0.6 }
                 });
             }
-            // Clean up the URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     }, []);
 
-    // Fetch and listen to drinks collection
+
     useEffect(() => {
         let unsubscribeDrinks: (() => void) | undefined;
         if (db && user) {
@@ -1608,8 +1625,8 @@ function AppContent() {
                 querySnapshot.forEach((doc) => { drinksData.push({ id: doc.id, ...doc.data() } as SugaryDrink); });
                 drinksData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 setDrinks(drinksData);
-                setLastLogTime(Date.now()); // Update last log time on any new log
-                setShowReminder(false); // Dismiss reminder if new data comes in
+                setLastLogTime(Date.now());
+                setShowReminder(false);
             }, (error) => { console.error("Error listening to drinks collection:", error); });
         }
         return () => {
@@ -1828,7 +1845,6 @@ function AppContent() {
     useEffect(() => {
         if (drinks.length > 0) {
             checkAchievements(drinks.length);
-            // The daily challenge check should happen immediately on log, so we keep that in handleLogDrink.
         }
     }, [drinks, checkAchievements]);
 
@@ -1854,7 +1870,7 @@ function AppContent() {
             } catch (error) { console.error("Error deleting drink:", error); }
         }
     };
-
+    
     const handleGoPremium = async () => {
         if (!user) {
             setAlertModal({ isOpen: true, message: "Please ensure you are logged in to purchase premium." });
@@ -1897,7 +1913,6 @@ function AppContent() {
 
     const totalSugar = drinks.reduce((sum, drink) => sum + drink.sugarGrams, 0).toFixed(1);
 
-    // --- Reminder Logic ---
     useEffect(() => {
         const REMINDER_INTERVAL_MINUTES = 15; // Remind every 15 minutes if no activity
         let reminderTimer: ReturnType<typeof setInterval>; // FIX: Use correct type for browser timer
@@ -1914,7 +1929,12 @@ function AppContent() {
         return () => clearInterval(reminderTimer); // Cleanup on unmount
     }, [lastLogTime, isModalOpen, isAchievementsModalOpen, isManageQuickAddsModalOpen, isPremiumModalOpen]);
 
-    // --- Share Progress Logic ---
+    const dismissReminder = () => setShowReminder(false);
+    const openModalFromReminder = () => {
+        setShowReminder(false);
+        setIsModalOpen(true);
+    };
+
     const handleShareProgress = useCallback(async () => {
         let shareMessage = "";
         if (dailySugarGoal !== null && dailySugarGoal > 0) {
@@ -1949,6 +1969,7 @@ function AppContent() {
             setAlertModal({ isOpen: true, message: 'Web Share API not supported. Text copied to clipboard: ' + shareMessage });
         }
     }, [dailySugarGoal, totalSugarToday, t]);
+
 
     if (!isAuthReady) {
         return (
@@ -2085,7 +2106,7 @@ function AppContent() {
                 <div className="flex items-center gap-4">
                     <RegionSwitcherFuel currentRegion={userRegion} setRegion={setUserRegion} />
                     <LanguageSwitcher />
-                    <button onClick={handleGoPremium} disabled={!isAuthReady} className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={handleGoPremium} className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 shadow-lg shadow-yellow-500/20">
                         {t('header_premium_button')}
                     </button>
                     <div className="text-sm text-gray-400">{user.email}</div>
@@ -2230,10 +2251,10 @@ function AppContent() {
                         <p className="text-sm text-blue-100">{t('reminder_text')}</p>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => { setIsModalOpen(true); setShowReminder(false); }} className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded-md">
+                        <button onClick={openModalFromReminder} className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded-md">
                             {t('reminder_log_button')}
                         </button>
-                        <button onClick={() => setShowReminder(false)} className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1 rounded-md">
+                        <button onClick={dismissReminder} className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1 rounded-md">
                             {t('reminder_dismiss_button')}
                         </button>
                     </div>
@@ -2327,7 +2348,6 @@ const AlertModal: FC<{ isOpen: boolean; message: string; onClose: () => void; }>
 export default function App() {
     useEffect(() => {
         const scriptId = 'canvas-confetti-script';
-        // Check if the script already exists
         if (document.getElementById(scriptId)) {
             return;
         }
@@ -2351,5 +2371,4 @@ export default function App() {
         </LanguageProvider>
     );
 }
-
 
