@@ -1840,8 +1840,7 @@ function AppContent() {
             }
         }
     }, [db, user, dailyChallenge, drinks, dailySugarGoal, totalSugarToday, customQuickAdds, finalAppId]);
-
-    // This effect will now handle calling the check functions after the state has been updated.
+    
     useEffect(() => {
         if (drinks.length > 0) {
             checkAchievements(drinks.length);
@@ -2371,4 +2370,3 @@ export default function App() {
         </LanguageProvider>
     );
 }
-
