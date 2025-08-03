@@ -1346,8 +1346,8 @@ const LongTermAICoach: FC<{ db: Firestore | null; userId: string | null; dailySu
     }, [db, userId, t, dailySugarGoal, appId]);
 
     useEffect(() => {
-        generateInsight();
-    }, [generateInsight]);
+        generateLongTermInsight();
+    }, [generateLongTermInsight]);
 
     return (
         <div className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-2xl p-6 border border-purple-400/30 shadow-lg">
