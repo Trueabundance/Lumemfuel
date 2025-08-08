@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, FC, ReactNode } from 'react';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, User, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, Firestore, getDocs, setDoc, getDoc } from 'firebase/firestore';
 // Ensured all necessary icons are imported here, and unused ones are removed.
 import { Droplet, BarChart3, Info, X, Plus, Star, Lock, Trash2, TrendingUp, Globe, Sparkles, AlertTriangle, Zap, Settings, Edit, Save, Award, Share2, History, BellRing, LogOut } from 'lucide-react';
@@ -583,7 +583,128 @@ const translations: Translations = {
         reminder_text: "오랜만입니다. 최근에 마신 음료를 기록하시겠습니까?",
         reminder_log_button: "음료 기록",
         reminder_dismiss_button: "닫기",
-    }
+    },
+    es: { // Spanish translations
+        app_title: "LumenFuel",
+        header_premium_button: "Hazte Premium",
+        header_premium_status: "Premium",
+        section_title_impact: "Impacto Corporal en Tiempo Real",
+        section_subtitle_impact: "Modelo educativo de los efectos del azúcar a corto plazo.",
+        label_total_sugar: "Azúcar Total",
+        section_title_control: "Consumo de Combustible",
+        button_log_drink: "Registrar Bebida",
+        disclaimer_title: "Descargo de Responsabilidad",
+        disclaimer_text: "LumenFuel es una herramienta educativa, no un consejo médico. Consulte a un profesional para obtener orientación sobre la salud.",
+        section_title_log: "Registro de Bebidas Actual",
+        log_empty: "Aún no hay bebidas registradas.",
+        section_title_premium: "Funciones Premium",
+        modal_title: "Registrar una Bebida Azucarada",
+        modal_title_late: "Registrar una Bebida Pasada",
+        modal_drink_type: "Tipo de Bebida",
+        modal_volume: "Volumen (ml)",
+        modal_sugar: "Azúcar (g / 100ml)",
+        modal_add_button: "Añadir al Registro",
+        drink_soda: "Refresco",
+        drink_juice: "Jugo de Fruta",
+        drink_energy_drink: "Bebida Energética",
+        drink_sweet_tea: "Té Dulce / Café Helado",
+        drink_sports_drink: "Bebida Deportiva",
+        impact_low: "Bajo",
+        impact_moderate: "Moderado",
+        impact_high: "Alto",
+        impact_pancreas_low: "Se espera una respuesta normal de la insulina.",
+        impact_pancreas_moderate: "Aumento de la demanda de producción de insulina en el páncreas.",
+        impact_pancreas_high: "Pico alto de insulina, forzando la función metabólica.",
+        impact_energy_low: "Niveles de energía estables.",
+        impact_energy_moderate: "Pico rápido de energía, con posible caída posterior.",
+        impact_energy_high: "Intenso subidón de energía, probablemente seguido de una caída significativa.",
+        impact_liver_low: "Procesamiento hepático estándar.",
+        impact_liver_moderate: "El hígado trabaja más para procesar la fructosa.",
+        impact_liver_high: "Carga significativa de fructosa, contribuyendo al almacenamiento de grasa.",
+        ai_coach_title: "Información del Entrenador de IA",
+        ai_coach_generating: "Generando información...",
+        ai_coach_no_key: "El Entrenador de IA está desactivado. Se requiere una clave de API de Gemini para esta función.",
+        premium_dashboard_title: "Panel Premium",
+        historical_trends_title: "Tus Tendencias Semanales de Azúcar",
+        long_term_insights_title: "Información de IA a Largo Plazo",
+        chart_loading: "Cargando datos históricos...",
+        chart_no_data: "No hay suficientes datos para mostrar tendencias. ¡Sigue registrando tus bebidas!",
+        premium_modal_title: "¡Desbloquea Premium!",
+        premium_modal_text: "¡Accede a tendencias históricas, información avanzada de IA y más al hacerte Premium!",
+        premium_modal_button: "Desbloquear Ahora",
+        premium_feature_trends_title: "Tendencias Históricas",
+        premium_feature_trends_desc: "Visualiza tu consumo de azúcar a lo largo del tiempo con gráficos interactivos.",
+        premium_feature_insights_title: "Información de IA a Largo Plazo",
+        premium_feature_insights_desc: "Obtén consejos personalizados basados en tus patrones de consumo a largo plazo.",
+        quick_log_title: "Añadir Rápido",
+        quick_add_soda_can: "Lata de Refresco (330ml, 10.6g/100ml)",
+        quick_add_juice_carton: "Cartón de Jugo (200ml, 10g/100ml)",
+        quick_add_energy_drink_can: "Lata de Bebida Energética (250ml, 11g/100ml)",
+        quick_add_sweet_tea_bottle: "Botella de Té Dulce (500ml, 8g/100ml)",
+        quick_add_sports_drink_bottle: "Botella de Bebida Deportiva (500ml, 6g/100ml)",
+        quick_add_soda_can_us: "Lata de Refresco (355ml, 10.6g/100ml)",
+        quick_add_juice_box_us: "Caja de Jugo (236ml, 10g/100ml)",
+        quick_add_energy_drink_can_us: "Lata de Bebida Energética (240ml, 11g/100ml)",
+        quick_add_sweet_tea_bottle_us: "Botella de Té Dulce (473ml, 8g/100ml)",
+        quick_add_sports_drink_bottle_us: "Botella de Bebida Deportiva (591ml, 6g/100ml)",
+        region_selector_title: "Región",
+        region_uk: "Reino Unido",
+        region_us: "Estados Unidos",
+        region_au: "Australia",
+        region_de: "Alemania",
+        region_pancreas: "Páncreas",
+        region_liver: "Hígado",
+        region_energy: "Niveles de Energía",
+        manage_quick_adds: "Gestionar Adiciones Rápidas",
+        add_custom_quick_add: "Añadir Adición Rápida Personalizada",
+        edit_custom_quick_add: "Editar Adición Rápida Personalizada",
+        custom_quick_add_label: "Etiqueta del Botón",
+        custom_quick_add_type: "Tipo de Bebida",
+        custom_quick_add_volume: "Volumen (ml)",
+        custom_quick_add_sugar: "Azúcar (g/100ml)",
+        save_quick_add: "Guardar Adición Rápida",
+        delete_quick_add: "Eliminar",
+        no_custom_quick_adds: "Aún no hay adiciones rápidas personalizadas.",
+        daily_goal_title: "Meta Diaria de Azúcar",
+        set_goal: "Establecer Meta (gramos)",
+        current_progress: "Progreso Actual",
+        goal_set_success: "¡Meta diaria establecida!",
+        goal_delete_success: "Meta diaria eliminada.",
+        goal_not_set: "No hay meta diaria establecida.",
+        goal_exceeded: "¡Meta excedida!",
+        goal_remaining: "restante",
+        achievements_title: "Logros",
+        achievement_first_log_name: "Primer Sabor",
+        achievement_first_log_desc: "¡Registraste tu primera bebida azucarada!",
+        achievement_7_day_streak_name: "Racha de 7 Días",
+        achievement_7_day_streak_desc: "¡Registraste bebidas durante 7 días consecutivos!",
+        achievement_30_day_streak_name: "Racha de 30 Días",
+        achievement_30_day_streak_desc: "¡Registraste bebidas durante 30 días consecutivos!",
+        achievement_5_goal_name: "Novato en Metas",
+        achievement_5_goal_desc: "¡Alcanzaste tu meta diaria 5 veces!",
+        achievement_10_drinks_name: "Principiante Goloso",
+        achievement_10_drinks_desc: "¡Registraste 10 bebidas azucaradas!",
+        achievement_50_drinks_name: "Rastreador de Azúcar",
+        achievement_50_drinks_desc: "¡Registraste 50 bebidas azucaradas!",
+        achievement_100_drinks_name: "Maestro del Azúcar",
+        achievement_100_drinks_desc: "¡Registraste 100 bebidas azucaradas!",
+        no_achievements_yet: "Aún no has ganado logros. ¡Sigue registrando!",
+        share_progress_button: "Compartir Progreso",
+        share_message_goal: "¡Hoy consumí {grams}g de azúcar, manteniéndome dentro de mi meta de {goal}g con LumenFuel! #OpcionesSaludables #LumenFuel",
+        share_message_over_goal: "Hoy consumí {grams}g de azúcar, superando mi meta de {goal}g. ¡Es hora de reflexionar con LumenFuel! #ViajeDeSalud #LumenFuel",
+        share_message_no_goal: "Hoy consumí {grams}g de azúcar. ¡Registra tu consumo con LumenFuel! #AppDeSalud",
+        daily_challenge_title: "Desafío Diario",
+        daily_challenge_completed: "¡Completado!",
+        daily_challenge_log_n_drinks: "Registra al menos {value} bebida(s) hoy.",
+        daily_challenge_stay_below_goal: "Mantente por debajo de {value}g de azúcar hoy.",
+        daily_challenge_use_custom_quick_add: "Usa un botón de adición rápida personalizada.",
+        daily_challenge_no_challenge: "No hay desafío para hoy. ¡Disfruta tu seguimiento!",
+        log_late_drink: "Registrar Tarde",
+        reminder_title: "Recordatorio Amable",
+        reminder_text: "Ha pasado un tiempo. ¿Te gustaría registrar alguna bebida reciente?",
+        reminder_log_button: "Registrar Bebida",
+        reminder_dismiss_button: "Descartar",
+    },
 };
 
 const LanguageContext = createContext<{
@@ -1534,12 +1655,7 @@ const AchievementsModalFuel: FC<AchievementsModalFuelProps> = ({ isOpen, onClose
 };
 
 
-// --- Main App Component ---
-// FIX: Declare global variables for the environment
-declare const __firebase_config: string;
-declare const __initial_auth_token: string;
-declare const __app_id: string;
-
+// Main App Component
 function AppContent() {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1565,12 +1681,10 @@ function AppContent() {
     const [showLateLogModal, setShowLateLogModal] = useState(false); // New state for late add modal
     const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; }>({ isOpen: false, message: '' });
 
-    const finalAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+    const finalAppId = appId;
 
     useEffect(() => {
-        const finalFirebaseConfig = typeof __firebase_config !== 'undefined'
-            ? JSON.parse(__firebase_config)
-            : firebaseConfig;
+        const finalFirebaseConfig = firebaseConfig;
 
         if (Object.keys(finalFirebaseConfig).length === 0 || !finalFirebaseConfig.apiKey) {
             setIsConfigMissing(true);
@@ -1811,7 +1925,7 @@ function AppContent() {
                 }
                 break;
             case 'stay_below_goal':
-                if (dailySugarGoal !== null && sugarTodayWithNewDrink <= (dailyChallenge.value || dailySugarGoal)) {
+                if (dailySugarGoal !== null && sugarTodayWithNewDrink <= (dailySugarGoal.value || dailySugarGoal)) {
                     challengeCompleted = true;
                 }
                 break;
@@ -2268,6 +2382,9 @@ const AuthScreen: FC<{ auth: Auth | null; }> = ({ auth }) => {
     const [password, setPassword] = useState('');
     const [isLogin, setIsLogin] = useState(true);
     const [error, setError] = useState('');
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetMessage, setResetMessage] = useState('');
 
     const handleAuthAction = async () => {
         if (!auth) return;
@@ -2282,6 +2399,56 @@ const AuthScreen: FC<{ auth: Auth | null; }> = ({ auth }) => {
             setError(err.message);
         }
     };
+
+    const handlePasswordReset = async () => {
+        if (!auth) return;
+        setError('');
+        setResetMessage('');
+        try {
+            await sendPasswordResetEmail(auth, resetEmail);
+            setResetMessage('Password reset email sent! Please check your inbox.');
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    if (isForgotPassword) {
+        return (
+            <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-sm mx-auto">
+                    <div className="flex items-center justify-center gap-3 mb-8">
+                        <Zap className="text-yellow-400" size={48} />
+                        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-orange-500 text-transparent bg-clip-text">LumenFuel</h1>
+                    </div>
+                    <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+                        <h2 className="text-2xl font-bold text-center mb-6">Reset Password</h2>
+                        {error && <p className="bg-red-500/20 text-red-400 text-sm p-3 rounded-lg mb-4">{error}</p>}
+                        {resetMessage && <p className="bg-green-500/20 text-green-400 text-sm p-3 rounded-lg mb-4">{resetMessage}</p>}
+                        <div className="space-y-4">
+                            <input
+                                type="email"
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                            <button
+                                onClick={handlePasswordReset}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300"
+                            >
+                                Send Reset Link
+                            </button>
+                        </div>
+                        <p className="text-center text-sm text-gray-400 mt-6">
+                            <button onClick={() => setIsForgotPassword(false)} className="font-semibold text-blue-400 hover:text-blue-300 ml-1">
+                                Back to Login
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
@@ -2308,6 +2475,11 @@ const AuthScreen: FC<{ auth: Auth | null; }> = ({ auth }) => {
                             placeholder="Password"
                             className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
+                        {isLogin && (
+                            <div className="text-right">
+                                <button onClick={() => setIsForgotPassword(true)} className="text-xs text-blue-400 hover:text-blue-300">Forgot Password?</button>
+                            </div>
+                        )}
                         <button
                             onClick={handleAuthAction}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300"
@@ -2315,6 +2487,11 @@ const AuthScreen: FC<{ auth: Auth | null; }> = ({ auth }) => {
                             {isLogin ? 'Log In' : 'Sign Up'}
                         </button>
                     </div>
+                    {!isLogin && (
+                        <p className="text-center text-xs text-gray-500 mt-4">
+                            By signing up, you agree to our <a href="#" className="text-blue-400 hover:underline">Terms & Conditions</a>.
+                        </p>
+                    )}
                     <p className="text-center text-sm text-gray-400 mt-6">
                         {isLogin ? "Don't have an account?" : "Already have an account?"}
                         <button onClick={() => setIsLogin(!isLogin)} className="font-semibold text-blue-400 hover:text-blue-300 ml-1">
