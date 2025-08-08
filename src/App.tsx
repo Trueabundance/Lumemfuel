@@ -903,7 +903,7 @@ const BodyVisual: FC<{ analysis: Analysis | null; drinkCount: number }> = ({ ana
                 <rect width="200" height="200" fill="url(#grid)" />
             </svg>
 
-            <svg viewBox="0 0 200 150" className="relative z-10 w-full h-full drop-shadow-lg">
+            <svg viewBox="0 0 200 200" className="relative z-10 w-full h-full drop-shadow-lg">
                 <defs>
                     <filter id="organGlow">
                         <feGaussianBlur stdDeviation="3.5" result="blur" />
@@ -912,7 +912,10 @@ const BodyVisual: FC<{ analysis: Analysis | null; drinkCount: number }> = ({ ana
                     </filter>
                 </defs>
                 
-                <g transform="translate(0, -20)">
+                {/* Torso Outline */}
+                <path d="M 80 20 C 40 20, 40 80, 50 100 L 50 180 L 150 180 L 150 100 C 160 80, 160 20, 120 20 Z" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" />
+
+                <g transform="translate(25, 10)">
                     <g filter={analysis && analysis.liver.impact > 0.5 ? "url(#organGlow)" : "none"}>
                         <path d="M105,30 C140,25 160,50 155,80 C150,110 120,115 100,105 Z" fill={liverFill} className="transition-all duration-500 organ-pulse" style={{'--pulse-duration': `${2 - liverImpact * 0.2}s`} as React.CSSProperties}/>
                         <text x="125" y="75" textAnchor="middle" alignmentBaseline="middle" fill="white" fontSize="20" fontWeight="bold" stroke="black" strokeWidth="1.5px" paintOrder="stroke">{`L`}</text>
@@ -1925,7 +1928,7 @@ function AppContent() {
                 }
                 break;
             case 'stay_below_goal':
-                if (dailySugarGoal !== null && sugarTodayWithNewDrink <= (dailySugarGoal.value || dailySugarGoal)) {
+                if (dailySugarGoal !== null && sugarTodayWithNewDrink <= (dailyChallenge.value || dailySugarGoal)) {
                     challengeCompleted = true;
                 }
                 break;
