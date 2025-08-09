@@ -1,0 +1,59 @@
+Arguments: 
+  /usr/local/bin/node /opt/yarn-v1.22.19/bin/yarn.js add react react-dom firebase lucide-react recharts three
+
+PATH: 
+  /opt/git/bin:/vscode/1.89.1.24130/bin/remote-cli:/opt/git/bin:/opt/git/bin:/usr/local/share/nvm/current/bin:/usr/local/share/npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  20.12.0
+
+Platform: 
+  linux x64
+
+Trace: 
+  Error: ENOENT: no such file or directory, copyfile '/root/.cache/yarn/v6/npm-ignore-7.0.5-4cb5f6cd7d4c7ab0365738c7aea888baa6d7efd9-integrity/node_modules/ignore/LICENSE-MIT' -> '/project/workspace/node_modules/@typescript-eslint/eslint-plugin/node_modules/ignore/LICENSE-MIT'
+
+npm manifest: 
+  {
+    "name": "react-vite-ts",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc && vite build",
+      "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+      "preview": "vite preview"
+    },
+    "dependencies": {
+      "firebase": "11.10.0",
+      "lucide-react": "0.525.0",
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0",
+      "recharts": "3.0.2"
+    },
+    "devDependencies": {
+      "@types/react": "^19.0.0",
+      "@types/react-dom": "^19.0.0",
+      "@typescript-eslint/eslint-plugin": "^8.17.0",
+      "@typescript-eslint/parser": "^8.17.0",
+      "@vitejs/plugin-react": "^4.3.4",
+      "autoprefixer": "10.4.20",
+      "eslint": "^9.16.0",
+      "eslint-plugin-react-hooks": "^5.1.0",
+      "eslint-plugin-react-refresh": "^0.4.16",
+      "postcss": "8.4.49",
+      "tailwindcss": "3.4.16",
+      "typescript": "^5.7.2",
+      "vite": "^6.0.3"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
